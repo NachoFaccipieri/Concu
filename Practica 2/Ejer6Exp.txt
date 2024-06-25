@@ -1,0 +1,33 @@
+6. En una montaña hay 30 escaladores que en una parte de la subida deben utilizar un único paso de a uno a la vez y de acuerdo
+al orden de llegada al mismo.
+
+
+sem mutex = 1;
+sem paso[id] = ([ID] 0);
+cola C;
+bool libre = true;
+
+Process escaladores[ID: 1..30]{
+    int idAux;
+
+    P(mutex);
+    if (libre){
+        libre = false;
+        V(mutex);
+    } else {
+        c.push(ID);
+        V(mutex);
+        P(paso[ID]);
+    }
+    
+    //Paso único
+    
+    P(mutex);
+    if (empty(C)){
+        libre = true;
+    } else {
+        c.pop(idAux);
+        V(paso[idAux]);
+    }
+    V(mutex);
+}

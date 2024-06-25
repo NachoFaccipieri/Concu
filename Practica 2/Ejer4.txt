@@ -1,0 +1,137 @@
+Existen N personas que deben fotocopiar un documento cada una. Resolver cada ítem usando semáforos:
+
+A)  Implemente una solución suponiendo que existe una única fotocopiadora compartida
+por todas las personas, y las mismas la deben usar de a una persona a la vez,
+sin importar el orden. Existe una función Fotocopiar() llamada por la persona que
+simula el uso de la fotocopiadora. Sólo se deben usar los procesos que representan a las Personas.
+
+mutex = 1;
+
+Process Personas[ID: 1..N]{
+    P(mutex);
+    //Fotocopiar;
+    V(mutex);
+}
+
+
+
+B) Modifique la solución de (a) para el caso en que se deba respetar el orden de llegada.
+
+sem mutex = 1;
+sem imp = 0;
+sem espera[N] = ([N] 0);
+cola C;
+bool imprimiendo = false;
+
+
+Process Personas[ID: 1..N]{
+    integer aux;
+    while (true){
+        P(mutex);
+        if (not imprimiendo){               //Si no hay nadie imprimiendo
+            imprimiendo = true;             //Pongo la variable en true
+            V(mutex);                       //Libero la SC
+        } else {                            //Si hay alguien imprimiendo
+            push(c, ID);                    //Me encolo
+            V(Mutex);                       //Libero la SC
+            P(Espera[ID]);                  //Espero a que me llamen
+        }
+        //Fotocopiar;
+        P(mutex);
+        If (empty(c)){
+            imprimiendo = false;
+        } else {
+            pop(C, aux);
+            V(espera[aux]);
+        }
+        V(mutex);
+    }
+}
+
+
+C) Modifique la solución de (b) para el caso en que se deba dar prioridad de acuerdo a la edad de cada
+persona (cuando la fotocopiadora está libre la debe usar la persona de mayor edad entre las que estén 
+esperando para usarla).
+
+Process Personas[ID: 1..N]{
+    while (true){
+        P(mutex);
+        if (not imprimiendo){               //Si no hay nadie imprimiendo
+            imprimiendo = true;             //Pongo la variable en true
+            V(imp);                         //Personas que quieren imprimir
+            V(mutex);                       //Libero la SC
+        } else {                            //Si hay alguien imprimiendo
+            push(c, ID,edad);                    //Me encolo
+            V(imp);                         //Agrego a alguien que quiere imprimir
+            V(Mutex);                       //Libero la SC
+            P(Espera[ID]);                  //Espero a que me llamen
+        }
+        P(imp);
+        //Fotocopiar;
+        P(mutex);
+        If (empty(c)){
+            imprimiendo = false;
+            V(mutex);
+        } else {
+            pop(C, ID, edad);
+            P(imp);
+            V(espera[ID]);
+            V(mutex);
+            //Fotocopiar
+        }
+
+    }
+}
+
+
+D) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden 
+dado por el identificador del proceso (la persona X no puede usar la fotocopiadora hasta
+que no haya terminado de usarla la persona X-1).
+
+Process Personas[ID: 1..N]{
+    P(orden[ID]);
+    //Fotocopiar;
+    V(orden[ID + 1]);
+}
+
+
+E) Modifique la solución de (b) para el caso en que además haya un Empleado que
+le indica a cada persona cuando debe usar la fotocopiadora.
+
+sem mutex = 1;
+sem imp = 0;
+sem espera[N] = ([N] 0);
+cola C;
+bool imprimiendo = false;
+
+Process Personas[ID: 1..N]{
+    while (true){
+        P(mutex);
+        push(C, ID);
+        V(mutex);                       //Encolo y libero
+        V(imp);                         //Agrego a alguien que quiere imprimir
+        P(espera[ID]);                  //Espero el llamado
+        //Fotocopiar
+        V(termine);                     //Impresora libre
+    }
+}
+
+Process Empleado{
+    while (true){
+        While(not empty(C)){
+            P(imp);                     //Espero que a alguien esté listo para imprimir
+            P(mutex);                   
+            desencolar(C,ID);           
+            V(mutex);                   //Desencolo y libero
+            V(espera[ID]);              //Llamo al proceso
+            P(termine);                 //Espero a que me avise que terminó de imprimir
+        }
+        P(imp);
+    }
+}
+
+
+F) Modificar la solución (e) para el caso en que sean 10 fotocopiadoras. 
+El empleado le indica a la persona cuando puede usar una fotocopiadora, y cual debe usar.
+
+

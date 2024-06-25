@@ -1,0 +1,44 @@
+3. Hay C chicos y una bolsa con caramelos limitada a N caramelos administrada por UNA abuela. Cuando todos los chicos han llegado
+llaman a la abuela y a partir de ese momento ella N veces selecciona un chico aleatoriamente y lo deja pasar a tomar un caramelo.
+
+
+
+bool seguir = true;
+sem espAbuela = 0;
+sem espID[1..C] = 0;
+
+Process chicos(id: 1..C){
+    sem espChicos = 0;
+    sem mutex = 1;
+
+    P(mutex);
+    cantChicos++;
+    if(cantChicos == C){
+        for(i=1 to C){
+            V(espChicos);
+        }
+        V(espAbuela);
+    }
+    V(mutex);
+    P(espChicos);
+    P(espID[id]);
+    while(seguir){
+        //Tomar caramelo
+        V(espAbuela);
+        P(espID[id]);
+    }
+}
+
+Process Abuela(){
+    int chico;
+    P(espAbuela);
+    for (i=1 to N){
+        chico = random(1, C);
+        V(espID[chico]);
+        P(espAbuela);
+    }
+    seguir = false;
+    for (i=1 to C){
+        V(espID[i]);
+    }
+}

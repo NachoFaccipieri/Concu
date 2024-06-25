@@ -1,0 +1,102 @@
+En cada ítem debe realizar una solución concurrente de grano grueso (utilizando <> y/o
+<await B; S>) para el siguiente problema, teniendo en cuenta las condiciones indicadas en el
+item. Existen N personas que deben imprimir un trabajo cada una.
+a) Implemente una solución suponiendo que existe una única impresora compartida por
+todas las personas, y las mismas la deben usar de a una persona a la vez, sin importar el
+orden. Existe una función Imprimir(documento) llamada por la persona que simula el uso
+de la impresora. Sólo se deben usar los procesos que representan a las Personas.
+b) Modifique la solución de (a) para el caso en que se deba respetar el orden de llegada.
+c) Modifique la solución de (b) para el caso en que se deba respetar el orden de llegada pero
+dando prioridad de acuerdo a la edad de cada persona (cuando la impresora está libre la
+debe usar la persona de mayor edad entre las que hayan solicitado su uso).
+d) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden
+dado por el identificador del proceso (la persona X no puede usar la impresora hasta que
+no haya terminado de usarla la persona X-1).
+e) Modifique la solución de (c) para el caso en que además hay un proceso Coordinador que
+le indica a cada persona cuando puede usar la impresora.
+
+//UNA impresora
+
+boolean usoImpresora = false;
+
+process persona[id: 0..N]{
+    <await(not usoImpresora);
+    usoImpresora = true>
+    Imprimir(documento)
+    usoImpresora = false
+}
+
+//B
+
+boolean usoImpresora = false;
+cola cola;
+int siguiente = -1;
+
+process persona[id: 0..N]{
+    <if(siguiente == -1) siguiente = id
+    else Agregar(C,id)>
+    <await(siguiente == id);
+    usoImpresora = true>
+    Imprimir(documento)
+    <if empty(cola) siguiente = -1
+    else siguiente = Sacar(colar)>
+}
+
+//Modifique la solución de (b) para el caso en que se deba respetar el orden de llegada pero
+dando prioridad de acuerdo a la edad de cada persona (cuando la impresora está libre la
+debe usar la persona de mayor edad entre las que hayan solicitado su uso).
+
+boolean usoImpresora = false;
+cola cola;
+int siguiente = -1;
+
+process persona[id: 0..N]{
+    <if(siguiente == -1) siguiente = id
+    else Agregar(C,edad, id)>
+    <await(siguiente == id);
+    usoImpresora = true>
+    Imprimir(documento)
+    <if empty(cola) siguiente = -1
+    else siguiente = Sacar(colar)>
+}
+
+//Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden
+dado por el identificador del proceso (la persona X no puede usar la impresora hasta que
+no haya terminado de usarla la persona X-1).
+
+int act = -1;
+
+process persona[id: 0..N]{
+    <await(act == (id - 1))>
+    Imprimir(documento)
+    act = act + 1;
+}
+
+
+//c) Modifique la solución de (b) para el caso en que se deba respetar el orden de llegada pero
+dando prioridad de acuerdo a la edad de cada persona (cuando la impresora está libre la
+debe usar la persona de mayor edad entre las que hayan solicitado su uso).
+e) Modifique la solución de (c) para el caso en que además hay un proceso Coordinador que
+le indica a cada persona cuando puede usar la impresora.
+
+cola c;
+int ok[0..N] = 0;
+boolean ocupado = false;
+
+process persona[id: 0..N]{
+    <encolar(c, edad, id);>
+    <await (ok[id] == 1)>
+    ok[id] = 0;
+    imprimir(documento)
+    ocupado = false;
+}
+
+process coordinador{
+    while(true){
+        <await(not empty(c))>
+        <await(not ocupado)>
+        ocupado = true
+        id = Sacar(c);
+        ok[id] = 1
+    }
+}

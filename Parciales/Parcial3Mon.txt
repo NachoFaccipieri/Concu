@@ -1,0 +1,73 @@
+a) En una estación de trenes, asisten P personas que deben realizar una carga de su tarjeta SUBE en la terminal disponible. 
+La terminal es utilizada en forma exclusiva por cada persona de acuerdo con el orden de llegada. Implemente una solución 
+utilizando sólo procesos Persona. Nota: la función UsarTerminal() le permite cargar la SUBE en la terminal disponible.
+
+Process persona[ID:1..P]{
+    sem mutex = 1;
+    sem espera[P] = ([P] 0);
+    queue espera;
+    bool libre = true;
+    int idAux;
+
+    P(mutex);
+    if(libre){
+        libre = false;
+        V(mutex);
+    } else {
+        espera.push(ID);
+        V(mutex);
+        P(espera[ID]);
+    }
+    UsarTerminal();
+    P(mutex);
+    if(empty(espera)){
+        libre = true;
+    } else {
+        espera.pop(idAux);
+        V(espera[idAux]);
+    }
+    V(mutex);
+}
+
+b) Resuelva el mismo problema anterior pero ahora considerando que hay T terminales disponibles. Las personas realizan una única 
+fila y la carga la realizan en la primera terminal que se libera. Recuerde que sólo debe emplear procesos Persona. 
+Nota: la función UsarTerminal(t) le permite cargar la SUBE en la terminal t.
+
+Process persona[ID:1..P]{
+    sem mutex = 1;
+    sem term = 1;
+    sem esperando = 0;
+    int libres = T;
+    int idAux;
+    queue espera;
+    queue terminalesLibres;
+
+    P(mutex);
+    if (libres == 0){
+        espera.push(ID);
+        V(mutex);
+        P(esperando[ID]);
+    } else {
+        libres--;
+        V(mutex);
+    }
+
+    P(term);
+    terminalesLibres.pop(t);
+    V(term);
+
+    UsarTerminal(t);
+
+    P(term);
+    terminalesLibres.push(t);
+    V(term);
+
+    P(mutex);
+    if(empty(espera)){
+        libres++;
+    } else {
+        espera.pop(idAux);
+        V(esperando[idAux]);
+    }
+    V(mutex);
+}

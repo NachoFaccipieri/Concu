@@ -1,0 +1,46 @@
+6. En una playa hay 5 equipos de 4 personas cada uno (en total son 20 personas donde cada una conoce previamente
+a que equipo pertenece). Cuando las personas van llegando esperan con los de su equipo hasta que el mismo esté 
+completo (hayan llegado los 4 integrantes), a partir de ese momento el equipo comienza a jugar. El juego consiste 
+en que cada integrante del grupo junta 15 monedas de a una en una playa (las monedas pueden ser de 1, 2 o 5 pesos) 
+y se suman los montos de las 60 monedas conseguidas en el grupo. Al finalizar cada persona debe conocer el monto 
+total juntado por su grupo. Nota: maximizar la concurrencia. Suponga que para simular la búsqueda de una moneda por
+parte de una persona existe una función Moneda() que retorna el valor de la moneda encontrada.
+
+
+Process personas(){
+    int idEquipo;           //Numero conocido
+    int Suma, SumaTotal;
+
+    equipo[idEquipo].llegue();
+
+    for(i := 1; i==15; i++){
+        suma = suma + Moneda();
+    }   
+    Equipo[idEquipo].Termine(suma, sumaTotal);
+}
+
+Monitor Equipo[idEquipo: 1..5]{
+    int integrantes = 0;
+    cond Esperando;
+    int sumaTotal = 0;
+
+    Procedure llegue(){
+        integrantes++;
+        if (integrantes == 4){
+            integrantes := 0;
+            signal_all(Esperando);
+        } else {
+            wait(Esperando);
+        }
+    }
+
+    Procedure termine(suma: in integer; sumaTotal: out integer){
+        SumaTotal := SumaTotal + suma;
+        Integrantes++;
+        if (integrantes == 4){
+            signal_all(esperando);
+        } else {
+            wait(Esperando);
+        }   
+    }
+}

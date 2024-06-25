@@ -1,0 +1,83 @@
+6) Una empresa de turismo posee 4 combis con capacidad para 25 personas cada una y UN vendedor
+que vende los pasajes a los clientes de acuerdo al orden de llegada. Hay C clientes que al llegar 
+intentan comprar un pasaje para una combi en particular (el cliente conoce este dato); si aún hay
+lugar en la combi seleccionada se le da el pasaje y se dirige hacia la combi; en caso contrario se
+retira. Cada combi espera a que suban los 25 pasajeros, luego realiza el viaje, y cuando llega al 
+destino deja bajar a todos los pasajeros. Nota: maximizar la concurrencia; suponga que para cada 
+combi al menos 25 clientes intentarán comprar pasaje.
+
+
+sum mutex = 1;
+sem verificando = 1;
+sem subir = 1;
+sem puedeIrse[4] = ([4] 0);
+cola c;
+integer numCombi;
+integer combis[4] = ([4] 0);
+pasajeVendido = false;
+boolean combisLlenas[4] = ([4] 0);
+
+Process personas[ID: 1..N]{
+    P(mutex);
+    if (empty (C)){                     //Si C está vacía, despierto al vendedor
+        push(c, ID, numCombi);          //Me encolo
+        V(llegaCliente);                //Despierto al vendendor
+    } else {                            //Si C no está vacia
+        push(c, ID, numCombi);          //Me encolo
+    }     
+    V(Mutex);                           //Libero la SC
+    P(espera[ID]);                      //Espero a que me llamen
+    if(pasajeVendido){                  //Verifica si el vendieron el pasaje
+        P(subir);
+        //Se sube
+        subidos[numCombi] = subidos[numCombi] + 1;
+        if(subidos[numCombi] == 25){
+            V(puedeIrse[numCombi])     //La combi puede irse si están todos subidos
+        }
+        V(subir);
+
+
+    } else {
+        //Se va                         //Si no le vendieron el pasaje, se va
+    }
+    //Termina el viaje
+    
+
+    //Cuándo se bajan los 25???
+}
+
+Process vendedor{
+    while(true){
+        P(mutex);                                       //Reservo SC
+        if(empty (C)){                                  //Si no hay nadie, espero un cliente
+            V(mutex);                                   //libero SC
+            P(llegaCliente);                            //Espero a que llegue un cliente
+        } else {                                        //Si hay alguien, libero la sc
+            V(mutex);
+        }
+
+        p(mutex);
+        pop(C, ID, numCombi);                           //Desencolo
+        v(mutex);
+
+        P(verificando);                                 //SC para verificar el estado de combis
+        if (combis[numCombi] == 25){                    //Pregunto si la cantidad de una combi es 25
+            pasajeVendido = false;
+            V(espera[ID]);
+        } else {
+            combis[numCombi] = combis[numCombi] + 1;    //Suma uno a la cantidad de personas que hay en una combi en particular
+            pasajeVendido = true;
+            V(espera[ID]);
+        }
+        V(verificando);
+    }
+}
+
+Process combi[ID: 1..4]{
+    P(puedeIrse[ID]);
+    //se van
+    for(i:=1 to 25){
+        //Se bajan
+    }
+    
+}

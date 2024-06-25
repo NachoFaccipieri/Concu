@@ -1,0 +1,34 @@
+3. Existen N personas que desean utilizar un cajero automático. Se debe tener en cuenta el orden de llegada de las personas.
+Suponga que hay una función UsarCajero() que simula el uso del cajero. Si llega una persona anciana tiene prioridad
+
+Monitor cajero(){
+    bool libre = true;
+    cond espera[ID];
+    cola c;
+
+    Procedure llegue(id: in int; edad: in int){
+        if (libre){
+            libre = false;
+        } else {
+            cant++;
+            c.push(id, edad);
+            wait(espera[id]);
+        }
+    }
+
+    Procedure termine(){
+        int idAux;
+        if (cant == 0){
+            libre = true;
+        } else {
+            cant--;
+            c.pop(idAux);
+            signal(espera[idAux]);
+        }
+    }
+}
+
+Process personas[ID: 1..N]{
+    int edad;
+    cajero.llegue(id,edad);
+}

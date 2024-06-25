@@ -1,0 +1,69 @@
+2. Existen N personas que desean utilizar un cajero automático. Se debe tener en cuenta el orden de llegada
+de las personas. Suponga que hay una función UsarCajero() que simula el uso del cajero.
+
+
+
+bool libre = true;
+
+Monitor cajero(){
+    int esperando = 0;
+    cond c;
+
+    Procedure pasar(){
+        if (libre){
+            libre = false;
+        } else {
+            esperando++;
+            wait(c);
+        }
+    }
+
+    Procedure termine(){
+        if (esperando == 0){
+            libre = true;
+        } else {
+            esperando--;
+            signal(c);
+        }
+    }
+}
+
+Process personas[ID:1..N]{
+    cajero.pasar();
+    usarCajero();
+    cajero.termine();
+}
+
+
+/*
+
+Process personas[ID:1..N]{
+    cajero.Llegue();
+    UsarCajero();
+    cajero.Salir();
+}
+
+Monitor cajero{
+    cond c;
+    boolean enUso = false;
+    integer esperando = 0;
+
+    Procedure llegue(){
+        if(not enUso){
+            enUso = true;
+        } else {
+            esperando++;
+            wait(C);
+        }
+    }
+
+    Procedure salir(){
+        if(esperando == 0){
+            enUso = false;
+        } else {
+            esperando--;
+            signal(C);
+        }
+    }
+}
+*/

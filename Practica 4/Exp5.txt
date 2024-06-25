@@ -1,0 +1,85 @@
+En una empresa de software hay un empleado testeo que prueba un nuevo producto para encontrar errores, cuando encuentra uno generan
+un reporte para que otro empleado mantenimiento corrija el error y le responda. El empleado mantenimiento toma los reportes para
+evaluarlos, hacer las correcciones necesarias y responderle al empleado testeo
+
+Process Testeo{
+    buscarError(R);
+    mantenimiento!reporte(R);
+    mantenimiento?dev(R);
+}
+
+Process mantenimiento{
+    testeo?reporte(R);
+    testeo!dev(R);
+}
+
+
+En una empresa de software hay un empleado testeo que prueba un nuevo producto para encontrar errores, cuando encuentra uno generan
+un reporte para que otro empleado mantenimiento corrija el error (no requiere una respuesta) y continua trabajando. El empleado
+mantenimiento toma los reportes para evaluarlos, hacer las correcciones necesarias y responderle al empleado testeo
+
+Process testeo{
+    buscarError(R);
+    admin!nuevoRep(R);
+}
+
+Process admin{
+    Queue reps;
+    do
+        testeo?nuevoRep(R) => push.reps(R);
+    []  (not empty(reps)) mantenimiento?pedido() => mantenimiento!siguiente(pop.reps(R));
+}
+
+Process mantenimiento{
+    admin!pedido();
+    admin?siguiente(R);
+}
+
+
+En una empresa de software hay N empleados testeo que prueban un nuevo producto para encontrar errores, cuando encuentra uno generan
+un reporte para que otro empleado mantenimiento corrija el error y le responda. El empleado mantenimiento toma los reportes para
+evaluarlos, hacer las correcciones necesarias y responderle al empleado testeo
+
+Process testeo[1..N]{
+    R = generarReporte();
+    admin!reporte(R)
+}
+
+Process admin{
+    Queue reportes;
+    do
+        testeo[*]?reporte(R); => push.reportes(R);
+    []  (not empty(reportes)) mantenimiento?pedido() => mantenimiento!siguiente(pop.reportes(R));
+    od
+}
+
+Process mantenimiento{
+    admin!pedido();
+    admin?siguiente(R);
+}
+
+
+En una empresa de software hay N empleados testeo que prueban un nuevo producto para encontrar errores, cuando encuentran uno generan
+un reporte para que uno de los 3 empleados mantenimiento corrija el error y le responda. El empleado mantenimiento toma los reportes
+para evaluarlos, hacer las correcciones necesarias y responderle al empleado testeo
+
+Process testeo[ID:1..N]{
+    R = generarReporte();
+    admin!nuevoRep(R, ID);
+    mantenimiento[*]?rta(R);
+}
+
+Process admin{
+    integer: idP, idM;
+    do
+        testeo[*]?nuevoRep(R, idP); => push.reps(R, idP);
+    []  (not empty(reps)) mantenimiento[*]?pedido(idM) => mantenimiento[idM]!siguiente(pop.reps(R, idP))
+    od
+    
+}
+
+Process mantenimiento[ID:1..3]{
+    admin!pedido(ID);
+    admin?siguiente(R, idP);
+    empleado[idP]!rta(R);
+}

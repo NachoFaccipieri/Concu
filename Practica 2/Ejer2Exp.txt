@@ -1,0 +1,17 @@
+2. Hay C chicos y hay una bolsa con caramelos limitada a N caramelos. Los chicos de a UNO van sacando de a UN caramelo y lo comen.
+Los chicos deben llevar la cuenta de cuántos caramelos se han tomado de la bolsa (puede quedar vacía la bolsa).
+
+Process chicos(){
+    int C = 0;
+    sem mutex = 1;
+    sem aux = 1;
+    
+    P(mutex);               //Si se hace afuera del while, todos los procesos van a pasar el while y se quedan esperando en el p(mutex)
+    while (C < bolsa){
+        bolsa--;
+        c++;
+        V(mutex);
+        P(mutex);
+    }
+    V(mutex);
+}

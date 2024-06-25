@@ -1,0 +1,33 @@
+4. En una empresa de genética hay N clientes que envían secuencias de ADN para que sean analizadas y esperan los resultados para
+poder continuar. Para resolver estos análisis la empresa cuenta con 1 servidor que resuelve los pedidos de acuerdo al orden
+de llegada de los mismos.
+
+
+cola c;
+sem esperar = 1;
+sem esperoResp[N] = ([N] 0);
+sem mutexCola = 1;
+
+Process Clientes[ID: 1..N]{
+
+    P(mutexCola);
+    c.push(ID, ADN);
+    V(esperar);
+    V(mutexCola);
+    P(esperoResp[ID]);
+
+}
+
+Process Servidor{
+
+    if(empty(C)){
+        P(esperar);
+    } else{
+        P(mutexCola);
+        c.pop(idAux, ADN);
+        V(mutexCola);
+        //Genero resultados
+        V(esperoResp[idAux]);
+    }
+
+}

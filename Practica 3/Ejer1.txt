@@ -1,0 +1,43 @@
+1) Implementar el acceso a una base de datos de solo lectura que puede atender a lo sumo 5 consultas simultáneas
+
+
+Monitor BaseDeDatos{
+    cond espera;
+    int cant;
+
+    Procedure pedido(){
+        If (cant < 5){
+            cant++;
+            signal(menorACinco);
+        } else {
+            wait(espera);
+            cant++;
+        }
+    }
+
+    Procedure consultar(){
+        if(cant < 5){
+            wait(menorACinco);
+        } else {
+        signal(espera);
+        }
+    }
+
+    Procedure termine(){
+        cant--;
+    }
+}     
+
+Process persona[ID:1..N]{
+    while(true){
+        BaseDeDatos.pedido();
+    }
+}
+
+Process consultas[cantConsultas:1..5]{
+    while(true){
+        BaseDeDatos.consultar();
+        //Consultar base de datos
+        BaseDeDatos.termine();
+    }
+}

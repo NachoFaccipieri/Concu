@@ -1,0 +1,29 @@
+Ej7__1
+
+bool[1..2] quiereTrabajar = false;
+bool[1..2] trabajando = false;
+bool CoordModificando = false;
+
+Process worker[ID: 1..2]{
+  while(true){
+    quiereTrabajar = true;
+    while (!trabajando[id] | CoordModificando ) skip;
+    SC
+    trabajando[id] = false;
+    SNC
+  }
+}
+
+Process coordinador{
+  int w1=1, w2=2;
+  while(true){
+    if (quiereTrabajar[w1]){
+      quiereTrabajar[w1] = false;
+      CoordModificando = true;
+      while (trabajando[w2]) skip;
+      trabajando[w1];
+      CoordModificando = false;
+    }
+    w1 <> w2;
+  }
+}

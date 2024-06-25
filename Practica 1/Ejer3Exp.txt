@@ -1,0 +1,26 @@
+3) Hay un docente que les debe tomar examen oral a 30 alumnos (de a uno a la vez) de acuerdo al orden dado por el Identificador
+del proceso 
+
+
+int actual = -1;
+bool ok = false;
+bool listo = false;
+
+Process Docente(){
+    for (int i=1; i<=30; i++){
+        actual = i;
+        <await ok>;
+        ok = false;
+        //Tomar examen
+        listo = true;
+        <await not listo>;
+    }
+}
+
+Processs Alumnos[ID: 1..30]{
+    <await(Actual==id)>;
+    ok = true;
+    //Rendir examen
+    <await listo>;
+    listo = fale;
+}

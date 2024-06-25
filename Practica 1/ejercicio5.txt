@@ -1,0 +1,34 @@
+5. Resolver con SENTENCIAS AWAIT (<> y/o <await B; S>) el siguiente problema. En un
+examen final hay P alumnos y 3 profesores. Cuando todos los alumnos han llegado comienza
+el examen. Cada alumno resuelve su examen, lo entrega y espera a que alguno de los
+profesores lo corrija y le indique la nota. Los profesores corrigen los exámenes respectando
+el orden en que los alumnos van entregando. 
+
+int alumnos = 0;
+int notas[0..P];
+int examenes[0..P];
+int entregados[0..P];
+int contador = 0;
+int corregidos = 0;
+
+PROCESS alumnos [id:1..P]{
+    <alumnos = alumnos + 1>
+    <await alumnos == P>
+    examenes[id] = //examen
+    <contador = contador + 1>
+    entregados[contador - 1] = id
+    <await notas[id] != 0 >
+}
+
+PROCESS profes [id:0..2]{
+    <await alumnos == P>
+    while(corregidos < P){
+        <await corregidos != contador;
+        act = corregidos
+        corregidos = corregidos + 1>
+        examen = examenes[entregados[act]]
+        notas[entregados[corregidos - 1]] = 1
+    }
+}
+
+

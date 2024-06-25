@@ -1,0 +1,49 @@
+6. En una playa hay 5 equipos de 4 personas cada uno (en total son 20 personas donde cada una conoce previamente
+a que equipo pertenece). Cuando las personas van llegando esperan con los de su equipo hasta que el mismo esté 
+completo (hayan llegado los 4 integrantes), a partir de ese momento el equipo comienza a jugar. El juego consiste 
+en que cada integrante del grupo junta 15 monedas de a una en una playa (las monedas pueden ser de 1, 2 o 5 pesos) 
+y se suman los montos de las 60 monedas conseguidas en el grupo. Al finalizar cada persona debe conocer el monto 
+total juntado por su grupo. Nota: maximizar la concurrencia. Suponga que para simular la búsqueda de una moneda por
+parte de una persona existe una función Moneda() que retorna el valor de la moneda encontrada.
+
+
+Process personas[ID:1..20]{
+    int miGrupo; //Conocido
+    int monto, montoFinal;
+
+    equipos[miGrupo].barrera();
+
+    for (int i=0; i<15; i++){
+        monto += Moneda();
+    }
+
+    equipos[miGrupo].sumarMonto(monto, montoFinal);
+}
+
+
+Monitor equipos[idGrupo:1..5]{
+    cond espEquipo;
+    cond sumaTotal;
+    int integrantes = 0;
+    int montoTotal = 0;
+
+    Procedure barrera(){
+        integrantes++;
+        if (integrantes == 4){
+            signal_all(espEquipo);
+        } else {
+            wait(espEquipo);
+        }
+    }
+
+    Procedure sumarMonto(monto: in int; montoFinal: out int){
+        montoTotal += monto;
+        integrantes--;
+        if (integrantes == 0){
+            signal_all(sumaTotal);
+        } else {
+            wait(sumaTotal);
+        }
+        montoFinal = montoTotal;
+    }
+}

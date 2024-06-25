@@ -1,0 +1,77 @@
+5. Suponga una comisión con 50 alumnos. Cuando los alumnos llegan forman una fila, una vez que están los 50 en 
+la fila el jefe de trabajos prácticos les entrega el número de grupo (número aleatorio del 1 al 25) de tal manera 
+que dos alumnos tendrán el mismo número de grupo (suponga que el jefe posee una función DarNumero() que devuelve 
+en forma aleatoria un número del 1 al 25, el jefe de trabajos prácticos no guarda el número que le asigna a cada
+alumno). Cuando un alumno ha recibido su número de grupo comienza a realizar la práctica. Al terminar de trabajar, 
+el alumno le avisa al jefe de trabajos prácticos y espera la nota. El jefe de trabajos prácticos, cuando han 
+llegado los dos alumnos de un grupo les devuelve a ambos la nota del GRUPO (el primer grupo en terminar tendrá 
+como nota 25, el segundo 24, y así sucesivamente hasta el último que tendrá nota 1).
+
+Process alumno(){
+    integer miGrupo;
+    integer nota;
+    Comisiones.llegue(id, miGrupo);
+    RealizarPractica();
+    grupo[miGrupo].Termine(nota);
+}
+
+Process profesor(){
+    comisiones.comenzar();
+    for (i = 25 to 1){
+        Comisiones.darNota(i);
+    }
+}
+
+Monitor Comisiones(){
+    integer fila = 0;
+    cond grupo;
+    cond c[N];
+    cola esperando;
+    vecAlu array[1..50] of integer;
+    vecNota array[1..25] of integer;
+
+    Procedure llegue(id: in integer; miGrupo: out integer){
+        fila++;
+        if (fila == 50)
+            Signal(grupo);
+        Wait(C);
+        miGrupo = vecAlu[id];
+    }
+
+    Procedure comenzar(){
+        integer grupoAlu;
+
+        if (fila != 50)
+            Wait(grupo);
+        signal_all;
+        for (i = 1 to 50){
+            vecAlu[i] = DarNumero();            
+        }
+    }
+
+    Procedure darNota(nota: in integer){
+        if(cant == 0){
+            wait(Llegamos);
+        }
+        pop(colaGrupo, idGrupo);
+        vecNota[idGrupo] = nota;
+        signal(notaLista);
+    }
+
+    Procedure recibirNota(idGrupo: in integer; nota: out integer){
+        push(colaGrupo, idGrupo);
+        signal(Llegamos);
+        Wait(notaLista);
+        nota = vecNota[idGrupo];
+    }
+}
+
+Monitor Grupo[1..25]{
+    Procedure termine(nota: out integer){
+        llegue++;
+        if (llegue == 2){
+            Signal(llegamos);
+        }
+        comisiones.recibirNota(id, nota);
+    }
+}

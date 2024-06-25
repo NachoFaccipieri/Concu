@@ -1,0 +1,75 @@
+Ejer 4 pr 1
+
+
+// ----> A <----
+
+boolean libre = true;
+integer esperando = N;
+
+Process persona[ID:0..N] {
+  < Await (libre);
+  libre = false; >
+  Imprimir(documento);
+  libre = true;
+}
+
+
+// -----> B <-----
+
+siguiente = -1;
+cola esperando;
+
+Process persona[ID:0..N] {
+  < if (siguiente == -1)
+      siguiente = ID;
+    else
+      agregar(esperando, ID)>;
+  < Await (siguiente == ID)>;
+  Imprimir(documento);
+  <if (empty(esperando))
+    siguiente == -1;
+  else
+    Sacar(esperando, siguiente)>;
+}
+
+
+//  ----> C <-----
+
+siguiente = -1;
+cola esperando;
+
+
+Process persona[ID:0..N] {
+  < if (siguiente == -1)
+      siguiente == ID;
+    else
+      agregar(esperando, ID, edad)>;
+  < Await (siguiente == ID)>;
+  Imprimir(documento);
+  <if (empty(esperando))
+    siguiente == -1;
+  else
+    Sacar(esperando, siguiente)>;
+}
+
+
+// -----> E <------
+
+bool ocupado = false;
+Cola esperando;
+
+Process persona[ID:0..N] {
+  < Encolar(esperando, ID, edad); >
+  < Await (Actual == ID>;
+  actual = -1;			//si termina antes de que se actualice actual, puede volver a entrar el mismo proceso
+  //uso impresora
+  ocupado = false;
+}
+
+Process Coordinador{
+  < await (not empty(esperando)) >;
+  < await (not ocupado); >
+  ocupado = true;
+  < Desencolar(esperando, ID, edad); >
+  actual = ID;
+}

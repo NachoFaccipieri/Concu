@@ -1,0 +1,55 @@
+Task Empleado is
+    Entry pedido(D: IN Text; Rta: out Text);
+End Empleado;
+
+Task type Clientes;
+
+Cliente: array(1..C) of clientes;
+
+Task body Clientes is
+    Rta: Text;
+begin
+    Emplado.pedido("Datos",Rta);
+end Clientes;
+
+Task body Empleado is
+    D: Text;
+    Rta: Text;
+begin
+    loop
+        accept pedido(D: IN Text; Rta: out Text) do
+            Rta := resolverPedido(D);
+        end pedido;
+    end loop;
+end Empleado;
+
+
+Task Empleado is
+    Entry siguiente(Datos: IN Text; Rta: OUT Text);
+end Empleado;
+
+Task type Clientes;
+Cliente: array[1..C] of Clientes;
+
+
+Task body Clientes is
+Res Text;
+begin
+    SELECT
+        Empleado.pedido("Datos", Rta);
+    OR DELAY 600.0
+        NULL;
+    END SELECT;
+end Clientes;
+
+Task body Empleado is
+Res Text;
+begin
+    loop
+        accept pedido(Dato: IN Text; Rta: out Text) do
+            Rta := resolverPedido(Dato);
+        end Pedido;
+    end loop;   
+end Empleado;
+
+

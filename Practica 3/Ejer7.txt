@@ -1,0 +1,88 @@
+7. Se debe simular una maratón con C corredores donde en la llegada hay UNA máquina expendedora de agua con capacidad para 20 
+botellas. Además existe un repositor encargado de reponer las botellas de la máquina. Cuando los C corredores han llegado al 
+inicio comienza la carrera. Cuando un corredor termina la carrera se dirigen a la máquina expendedora, espera su turno 
+(respetando el orden de llegada), saca una botella y se retira. Si encuentra la máquina sin botellas, le avisa al repositor 
+para que cargue nuevamente la máquina con 20 botellas; espera a que se haga la recarga; saca una botella y se retira. 
+Nota: maximizar la concurrencia; mientras se reponen las botellas se debe permitir que otros corredores se encolen.
+
+
+Process persona[ID: 1..N]{
+    carrera.llegue();
+    //Correr
+    fila.entrar();
+    maquina.agua();
+    fila.siguiente();
+}
+
+Process empleado(){
+    int cant := N;
+    while (cant > 0){
+        fila.reponer();
+    }
+}
+
+Monitor carrera(){
+    cond c;
+    int cant := 0;
+    int esperando := 0;
+    boolean ocupada = false;
+
+    Procedure llegue(){
+        cant++;
+        if (cant == N) { 
+            signal_all(c);
+        } else {
+            Wait(c);
+        }
+    }
+}
+
+Monitor fila(){
+    boolean ocupada = false;
+    int esperando = 0;
+
+    Procedure entrar(){
+        if (not ocupada){
+            ocupada = true;
+        } else {
+            esperando++;
+            wait(esperandoMaquina);
+            esperando--;
+        }
+    }
+
+    Procedure siguiente(){
+        if(esperando == 0){
+            ocuapda = false;
+        } else {
+            signal(esperandoBotellas);
+        }
+    }
+}
+
+Monitor maquina(){
+    int botellas = 20;
+    int cant = N;
+
+    procedure agua(){
+        if(botellas == 0){
+            signal(emp);
+            wait(esperandoBotellas);
+        }
+        botellas--;
+        cant--;
+    }
+
+    Procedure reponer(){
+        while (cant > 0){
+            if(botellas > 0){
+                wait(emp);
+            }
+            if (cant != 0){
+                //reponer
+                botellas = 20;
+                signal(esperandoBotellas);        
+            }
+        }
+    }
+}

@@ -1,0 +1,457 @@
+Resolver con PMS. En la estación de trenes hay una terminal de SUBE que debe ser usada por P personas de acuerdo con el orden
+de llegada. Cuando la persona accede a la terminal, la usa y luego se retira para dejar al siguiente. Nota: cada Persona una
+sólo una vez la terminal.
+
+Process persona[ID:1..P]{
+    admin!llegue(ID);
+    admin?turno();
+    //uso terminal
+    admin!termine();
+}
+
+Process admin{
+    Queue fila;
+    Bool ocupada = false;
+    while(true) loop
+        do
+            persona[*]?llegue(idP); =>
+                if(not ocupada) persona[idP]!turno(); ocupada = true;
+                else fila.push(idP);
+        []  persona[*]?termine(); => 
+                if(not empty(fila)) persona[fila.pop()]!turno();
+                else ocupada = false;
+        od
+    end loop;
+}
+
+
+2) En un negocio de cobros digitales hay P personas que deben pasar por la única caja de cobros para realizar el pago de sus
+boletas. Las personas son atendidas de acuerdo con el orden de llegada, teniendo prioridad aquellos que deben pagar menos de 5
+boletas de los que pagan más. Adicionalmente, las personas embarazadas y los ancianos tienen prioridad sobre los dos casos
+anteriores. Las personas entregan sus boletas al cajero y el dinero de pago; el cajero les devuelve el vuelto y los recibos de pago.
+Implemente un programa que permita resolver el problema anterior usando ADA.
+
+Task type persona is
+personas: array[1..P] of persona;
+
+Task caja is
+    enrty prioridad(b: in Boletas, d: in int, v: out int, r: out Recibos);
+    enrty menosPagos(b: in Boletas, d: in int, v: out int, r: out Recibos);
+    enrty normal(b: in Boletas, d: in int, v: out int, r: out Recibos);
+end caja;
+
+task body persona is
+    tipo: boolean;
+begin
+    tipo = generarTipo();
+    if(tipo) then
+        caja.prioridad();
+    else if(pagos < 5)
+        caja.menosPagos();
+    else
+        caja.normal();
+end persona;
+
+task body caja is
+    
+begin
+    loop
+        select
+            accept prioridad(b: in Boletas, d: in int, v: out int, r: out Recibos) do
+                v: generarV();
+                r: generarR();
+            end prioridad();
+        or when(prioridad'count = 0); =>
+            accept menosPagos(b: in Boletas, d: in int, v: out int, r: out Recibos) do
+                v: generarV();
+                r: generarR();
+            end menosPagos();
+        or when(prioridad'count = 0 & menosPagos'count = 0) =>
+            accept normal(b: in Boletas, d: in int, v: out int, r: out Recibos) do
+                v: generarV();
+                r: generarR();
+            end normal();
+        end select();
+    end loop    
+end caja;
+
+
+
+Resolver con PASAJE DE MENSAJES ASINCRÓNICO (PMA) el siguiente problema. En un negocio de cobros digitales hay P personas que deben
+pasar por la única caja de cobros para realizar el pago de sus boletas. Las personas son atendidas de acuerdo con el orden de
+llegada, teniendo prioridad aquellos que deben pagar menos de 5 boletas de los que pagan más. Adicionalmente, las personas
+embarazadas tienen prioridad sobre los dos casos anteriores. Las personas entregan sus boletas al cajero y el dinero de pago; el
+cajero les devuelve el vuelto y los recibos de pago.
+
+Process personas[ID:1..P]{
+    tipo: boolean;
+    boleta: Text;
+    dinero: Real;
+
+    tipo: generarTipo();
+    
+    if(tipo) then
+        send viejos(boleta, dinero, ID);
+    else if(pagos < 5) then
+        send menosDe5(boleta, dinero, ID);        
+    else
+        send Normal(boleta, dinero, ID);
+
+    receive rta[ID](vuelto, recibo);
+}
+
+Process caja{
+    while(true) loop
+        if(not empty(viejos)) then
+            receive viejos(boleta,dinero, idP);
+        [] (not empty(menosDe5) && empty(viejos)) then
+            receive menosDe5(boleta,dinero, idP);
+        []  (empty(viejos) & empty(menosDe5) && not empty(normal))
+            receive normal(boleta,dinero, idP);
+        end if;
+        send rta[idP](vuelto, recibo);
+    end loop;
+}
+
+
+Resolver con ADA el siguiente problema. La oficina central de una empresa de venta de indumentaria debe calcular cuántas veces fue 
+vendido cada uno de los artículos de su catálogo. La empresa se compone de 100 sucursales y cada una de ellas maneja su propia base 
+de datos de ventas. La oficina central cuenta con una herramienta que funciona de la siguiente manera: ante la consulta realizada 
+para un artículo determinado, la herramienta envía el identificador del artículo a cada una de las sucursales, para que cada uno de 
+éstas calcule cuántas veces fue vendido en ella. Al final del procesamiento, la herramienta debe conocer cuántas veces fue vendido 
+en total, considerando todas las sucursales. Cuando ha terminado de procesar un artículo comienza con el siguiente (suponga que la 
+herramienta tiene una función generarArtículo que retorna el siguiente ID a consultar). Nota: maximizar la concurrencia. Supongo que
+existe una función ObtenerVentas(ID) que retorna la cantidad de veces que fue vendido el artículo con identificador ID en la base de
+datos de la sucursal que la llama.
+
+task body sucursal;
+sucursales: array[1..100] of sucursal;
+
+Task central is
+    entry Ident(idProx: out integer);
+    entry ventas(id: out integer);
+    entry masVendido(total1: out integer);
+end central;
+
+Task body sucursales is
+begin
+    central.Ident(id);
+    venta := ObtenerVentas();
+    central.ventas(venta);
+    central.masVendido(total1);
+end sucursales;
+
+Task body central is
+    idP: integer;
+begin
+    idP := generarArticulo();
+
+    for i:=1 to 200 loop
+        select
+            accept Ident(id:out integer) do
+                id:= idP;
+            end Ident;
+        
+        or
+            when(Ident'count = 0) =>
+            accept ventas(venta: in integer) do
+                total := total + venta;
+            end ventas;
+        end select
+    end loop;
+
+    for i:=1 to 100 loop
+        accept masVendido(total1: out integer) do
+            total1 := total;
+        end masVendido
+    end loop
+end central;
+
+
+Resolver con PMA el siguiente problema. Se debe modelar el funcionamiento de una casa de venta de repuestos automotores, en la que
+trabajan V vendedores y que debe atender a C clientes. El modelado debe considerar que: (a) cada cliente realiza un pedido y luego
+espera a que se lo entreguen; y (b) los pedidos que hacen los clientes son tomados por cualquiera de los vendedores. Cuando no hay
+pedidos para atender, los vendedores aprovechan para controlar el stock de los repuestos (tardan entre 2 y 4 minutos para hacer esto)
+Nota: maximizar la concurrencia
+
+Process vendedores[ID:1..V]{
+    loop
+        send listo();
+        send solicitud();
+        receive siguiente(idP);
+    
+        if(idP != 0){
+            resolverPedido();
+            send entrega[idP];
+        } else {
+            delay(2 o 4 min);
+        }
+    end loop;
+}
+
+Process admin{
+    loop
+        receive solicitud();
+        if (not empty(listo)) receive listo();
+            if(empty (fila)){
+                send siguiente(-1);
+            } else {
+                send siguiente(pop.fila());
+            }
+        []  (not empty(pedido)); receive pedido(idP); => push.fila(idP);
+    end loop
+}
+
+Process clientes[ID:1..C]{
+    send pedido(idP);
+    send solicitud();
+    receive entrega[ID]();
+}
+
+Resolver con ADA el siguiente problema. Se quiere modelar el funcionamiento de un banco, al cual llegan clientes que deben realizar
+un pago y llevarse su comprobante. Los clientes se dividen entre los regulares y los premium, habiendo R clientes regulares y P
+clientes premium. Existe un único empleado en el banco, el cual atiende de acuerdo al orden de llegada, pero dando prioridad a los
+premium sobre los regulares. Si a los 30 minutos de llegar un cliente regular no fue atendido, entonces se retira sin realizar el
+pago. Los clientes premium siempre esperan hasta ser atendidos.
+
+Task type cliente is
+cli: array[1..C] of cliente;
+
+Task type empleado is
+    entry pedidoR(pago: in real; comp: out Text);
+    entry pedidoP(pago: in real; comp: out Text);
+end empleado
+
+Task body empleado is
+begin
+    loop
+        select
+            accept pedidoP(pago: in real; comp: out Text) do
+                comp:= generarComprobante;
+            end pedidoP
+        or
+            when (pedidoP'count = 0) => accept pedidoR(pago: in real; comp: out Text) do
+                comp:= generarComprobante;
+            end pedidoP;
+        end select;
+    end loop;
+end empleado;
+
+Task body clienteR is
+    tipo: char;
+begin
+    select
+        empleado.pedidoR();
+    or delay(30 min)
+        null;
+    end select;
+end cliente;
+
+Task body clienteP is
+    tipo: char;
+begin
+    select
+        empleado.pedidoP();
+    end select;
+end cliente;
+
+
+
+Resolver con Pasaje de Mensajes Sincrónicos (PMS) el siguiente problema. En un torneo de programación hay 1 organizador, N
+competidores y S supervisores. El organizador comunica el desafío a resolver a cada competidor. Cuando un competidor cuenta con el
+desafío a resolver, lo hace y lo entrega para ser evaluado. A continuación, espera a que alguno de los supervisores lo corrija y le
+indique si está bien. En caso de tener errores, el competidor debe corregirlo y volver a entregar, repitiendo la misma metodología
+hasta que llegue a la solución esperada. Los supervisores corrigen las entregas respetando el orden en que los competidores van
+entregando. Nota: maximizar la concurrencia y no generar demora innecesaria.
+
+
+Process competidores[ID:1..N]{
+    bool corregir = true;
+    organizador!pedido(ID);
+    organizador?desafio(des);
+    //resolver desafio
+    while (corregir){
+        //resolver
+        admin!correccion(ID, corregir);
+        supervisores[*]?corregido(corregir);
+    }
+}
+
+Process admin{
+    integer idS, idP;
+    Queue fila;
+    loop
+        if 
+            (not empty(fila)); supervisores[*]?listo(idS); => supervisores[idS]!siguiente(corregir, fila.pop());
+        []  competidores[*]?correccion(idP, corregir); => push.fila(idP);
+        
+    end loop
+}
+
+Process supervisores[ID:1..S]{
+    Text: desafio;
+    integer: idP;
+    loop
+        admin!listo(ID);
+        admin?siguiente(desafio, idP);
+        //corrige
+        competidores[idP]!corregido(desafio);
+    end loop;
+}
+
+Process organizador{
+    for i:=1 to N loop
+        des:= generarDesafio();
+        competidores[*]?pedido(idP);
+        competidores[idP]!desafío(des);
+    end loop
+}
+
+
+Resolver con ADA el siguiente problema. Una empresa de venta de calzado cuenta con S sedes. En la oficina central de la empresa se
+utiliza un sistema que permite controlar el stock de los diferentes modelos, ya que cada sede tiene una base de datos propia. El
+sistema de control de stock funciona de la siguiente manera: dado un modelo determinado, lo envía a las sedes para que cada una le
+devuelva la cantidad disponible en ellas; al final del procesamiento, el sistema informa el total de calzados disponibles de dicho
+modelo. Una vez que se completó el procesamiento de un modelo, se procede a realizar lo mismo con el siguiente modelo. Nota: suponga
+que existe una función DevolverStock(modelo,cantidad) que utiliza cada sede donde recibe como parámetro de entrada el modelo de
+calzado y retorna como parámetro de salida la cantidad de pares disponibles. Maximizar la concurrencia y no generar demora innecesaria.
+
+Task type sedes is
+sede: array[1..S] of sedes;
+
+Task central is
+    entry modelo(idM: out integer);
+    entry devolver(modelo: in text; cantidad: in integer);
+    entry devCant(cantTotal: out integer);
+end central;
+
+Task body sedes is
+    integer: idM, cantidad, cantTotal;
+    Text: modelo;
+begin
+    central.modelo(idM);
+    DevolverStock(modelo, cantidad);
+    central.devolver(modelo, cantidad);
+    central.devCant(cantTotal);
+end body;
+
+Task body central is
+    integer: idM;
+begin
+    idM: generarModelo;
+    for i:=1 to S*2 loop
+        select
+            accept modelo(idMod: out integer) do
+                idMod := idM;
+            end modelo;
+        or
+            when(modelo'count = 0) =>
+            accept devolver(modelo: in Text, cantidad: in integer) do
+                cantTotal := cantTotal + cantidad;
+            end devolver;
+        end select;
+    end loop;
+
+    for i:=1 to S loop
+        accept devCant(cantTotal: out integer);
+    end loop;
+end central;
+
+
+Resolver con Pasaje de Mensajes Sincrónicos (PMS) el siguiente problema. En un comedor estudiantil hay un horno microondas que debe
+ser usado por E estudiantes de acuerdo con el orden de llegada. Cuando el estudiante accede al horno, lo usa y luego se retira para
+dejar al siguiente. Nota: cada Estudiante una sólo una vez el horno
+
+Process estudiantes[ID:1..E]{
+    microondas!pedido(ID);
+    microondas?turno();
+    //uso microondas
+    microondas!termine();
+}
+
+Process microondas{
+    Queue fila;
+    integer idP;
+    bool ocupado;
+    loop
+        if
+            estudiantes[*]?pedido(idP); => 
+                if(not ocupado){
+                    estudiantes[idP]!siguiente();
+                    ocupado = true;
+                }else{
+                    push.fila(idP);
+                }
+        []  estudiantes[*]?termine; => 
+                if(not empty(fila)) then
+                    estudiantes[pop.fila]!siguiente();
+                else
+                    ocupado = false;
+    end loop;
+}
+
+
+
+Resolver con ADA el siguiente problema. Se debe controlar el acceso a una base de datos. Existen L procesos Lectores y E procesos
+Escritores que trabajan indefinidamente de la siguiente manera:
+• Escritor: intenta acceder para escribir, si no lo logra inmediatamente, espera 1 minuto y vuelve a intentarlo de la misma manera.
+• Lector: intenta acceder para leer, si no lo logro en 2 minutos, espera 5 minutos y vuelve a intentarlo de la misma manera.
+Un proceso Escritor podrá acceder si no hay ningún otro proceso usando la base de datos; al acceder escribe y sale de la BD. Un
+proceso Lector podrá acceder si no hay procesos Escritores usando la base de datos; al acceder lee y sale de la BD. Siempre se le
+debe dar prioridad al pedido de acceso para escribir sobre el pedido de acceso para leer.
+
+Task type lectores;
+lector: array[1..L] of lectores;
+
+Task type escritores;
+escritor: array[1..E] of escritores;
+
+Task admin is
+    entry leer();
+    entry escibir();
+end admin;
+
+Task body admin is
+    bool: libre = true;
+begin
+    loop
+        select
+            when (lectores = 0) =>
+                accept leer();
+                accept termineLeer();
+        or
+            when (leer'count = 0) =>
+                accept escibir();
+                lect++;
+        or
+            accept termineLeer();
+            lect--;
+        end select;
+    end loop
+end admin;
+
+Task body lectores is
+begin
+    loop
+        select
+            admin.leer();
+            //lee
+            admin.termineLeer();
+        or delay(120);
+            delay(5*60);
+        end select;
+    end loop
+end lectores;
+
+Task body escritores is
+begin
+    loop
+        select
+            admin.escribir();
+            //escribo
+            admin.termineEscribir();
+        else
+            delay(60);
+        end select;
+    end loop
+end escritores;

@@ -1,0 +1,44 @@
+2) En una empresa trabajan 20 vendedores ambulantes que forman 5 equipos de 4 personas cada uno (cada vendedor conoce previamente 
+a que equipo pertenece). Cada equipo se encarga de vender un producto diferente. Las personas de un equipo se deben juntar antes 
+de comenzar a trabajar. Luego cada integrante del equipo trabaja independientemente del resto vendiendo ejemplares del producto 
+correspondiente. Al terminar cada integrante del grupo debe conocer la cantidad de ejemplares vendidos por el grupo. 
+Nota: maximizar la concurrencia.
+
+
+
+Monitor grupos[ID: 1..5]{
+    int llegue = 0;
+    suma = 0;
+    cond barrera;
+
+    Procedure barreraGrupo(){
+        llegue++;
+
+        if(llegue < 4){
+            wait(barrera);
+        }else{
+            signal_all(barrera);
+        }
+    }
+
+    Procedure fin(cant: in int; cantTotal: out int){
+        suma = suma + cant;
+        llegue--;
+        if (llegue == 0){
+            signal_all(barrera);
+        } else {
+            wait(barrera);
+        }
+        cantTotal = suma;
+    }
+}
+
+
+Process vendedor[ID: 1..20]{
+    int miGrupo; //Numero conocido por el vendedor
+    int cant, cantTotal;
+
+    grupos[miGrupo].barreraGrupo();
+    cant = ventaProducto();
+    grupos[miGrupo].fin(cant, cantTotal);
+}

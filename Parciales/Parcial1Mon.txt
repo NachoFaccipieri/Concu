@@ -1,0 +1,33 @@
+2) Resolver el siguiente problema con MONITORES. En una montaña hay 30 escaladores que en una parte de la subida deben utilizar
+un único paso de a uno a la vez y de acuerdo al orden de llegada al mismo. Nota: sólo se pueden utilizar procesos que representen
+a los escaladores; cada escalador usa sólo una vez el paso.
+
+Monitor Admin(){
+    cond espera;
+    int cont = 0;
+    bool pasando = false;
+
+    Procedure llegada(){
+        if (pasando){
+            cant++;
+            wait(espera);
+        } else {
+            pasando = false;
+        }
+    }
+
+    Procedure salir{
+        if(cant > 0){
+            cant--;
+            signal(espera);
+        } else {
+            pasando = false;
+        }
+    }
+}
+
+Process escalador[ID= 1..30]{
+    Admin.llegada();
+    //paso
+    Admin.salir();
+}

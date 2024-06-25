@@ -1,0 +1,125 @@
+Resolver con PMS (Pasaje de Mensajes SINCRÓNICOS) el siguiente problema. En
+una carrera hay C corredores, 3 Coordinadores. Al llegar los corredores deben dirigirse a
+los coordinadores para que cualquiera de ellos le dé el número de “chaleco” con el que
+van a correr. Los coordinadores atienden a los corredores de acuerdo al orden de llegada
+(cuando un coordinador está libre atiende al primer corredor que está esperando). Cuando
+todos los corredores ya recibieron su número de “chaleco” comienza la carrera. Cuando
+un corredor termina de correr busca la posición en que termino la carrera y se retira.
+Nota: maximizar la concurrencia.
+
+
+Process corredores[ID:1..C]{
+    integer: miNum;
+    admin!llegue(ID);
+    coord[*]?numero(miNum);
+    inicioCarr!llegue();
+    inicioCarr!iniciar();
+    //correr
+    finalizar!termine(ID);
+    finalizar!pos(pos);
+}
+
+Process finalizar{
+    for (i:=1 to C) {
+        corredores[*]?termine(idC);
+        corredores[idC]?pos(i);
+    }
+}
+
+Process inicioCarr{
+    integer: cant;
+
+    for i:=1 to C
+        corredores[*]?llegue();
+    for i:=1 to C
+        corredores[*]?iniciar();
+}
+
+Process coord[ID:1..3]{
+    integer: idC, num;
+    while(true) loop
+        admin!sig(id);
+        admin?prox(idC);
+        num: generarNum();
+        corredores[idC]!numero(num);
+    end loop
+}
+
+Process admin{
+    integer: idCorr, idCoord;
+    Queue fila;
+    do
+        corredores[*]?llegue(idC); => push.fila(idCorr);
+    []  (not empty(fila)); coord[*]?sig(idCoord) => coord[idCoord]!prox(pop.fila(idCorr));
+    od
+}
+
+
+Resolver con PMA (Pasaje de Mensajes ASINCRÓNICOS) el siguiente problema. En
+una oficina hay 3 empleados y P personas que van para ser atendidas para iniciar un
+trámite, o para buscar su resultado. Cuando una persona llega espera hasta ser atendido
+por cualquiera de los empleados, le indica que necesita (iniciar trámite o buscar el
+resultado de un trámite) y espera hasta que terminan de atenderlo y le devuelven: un
+número de trámite en el primer caso, un dictamen en el segundo caso. Los empleados
+atienden las solicitudes en orden de llegada; si no hay personas esperando, durante 5
+minutos resuelven trámites pendientes (simular el proceso de resolver trámites pendientes
+por medio de un delay). Cuando se han atendido a las P personas los empleados se
+retiran. Nota: no generar demora innecesaria; cada persona hace sólo un pedido y
+termina; los empleados deben terminar.
+
+
+Process personas[ID:1..P]{
+    send prox(tramite, ID);
+    receive respuesta[ID](rta);
+}
+
+Process empleados[ID:1..3]{
+    Text: tramite;
+    integer: idP;
+
+    send libre(ID);
+    receive sig[ID](tramite, idP);
+    while (idP != -1){
+        if (idP != 0) then
+            rta = resolverPedido();
+            send respuesta[idP](rta);
+        else
+            delay(5 min);
+        send libre(ID);
+        receive sig[ID](tramite, idP);
+    }
+}
+
+Process admin{
+    Text: tramite;
+    integer idP, idE;
+
+    while(cant < P){
+        receive libre(idE);
+        if (not empty(pedido)) then
+            receive prox(tramite, idP);
+            send sig[idE](tramite, idP);
+            cant++;
+        else
+            idP=0;
+    }
+    for i:=1 to 3
+        receive libre(id);
+        send sig[id](tramite, -1);
+
+}
+
+
+Resolver con ADA el siguiente problema. Hay una empresa de análisis
+genético. Hay N clientes que sucesivamente envían secuencias de ADN a la
+empresa para que sean analizadas y esperan los resultados para poder envían otra
+secuencia a analizar. Para resolver estos análisis la empresa cuenta con 4 servidores
+que van rotando su uso para no exigirlos de más (en todo momento uno está trabajando y
+los otros descansando); cada 6 horas cambia en servidor con el que se trabaja siguiendo
+un orden circular (1-2-3-4-1-2...). El servidor que está trabajando, toma un pedido (de
+acuerdo al orden de llegada de los mismos), lo resuelve y devuelve el resultado al cliente
+correspondiente. Nota: suponga que existe una función Resolver(texto) que utiliza cada
+Servidor para resolver el análisis de una secuencia de tipo texto y devuelve el resultado
+que es un entero.
+
+

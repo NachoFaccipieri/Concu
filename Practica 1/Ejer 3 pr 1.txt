@@ -1,0 +1,23 @@
+Ejer 3 pr 1
+
+
+Process buscoRecurso {
+  < await cola(notEmpty);
+  cola(SacarRercurso); >
+  //Uso recurso
+  cola(encolarRecurso);
+}
+
+
+------------------------
+
+int cant = 5;
+
+Process buscoRecurso {
+  < await cant>0;
+  cola(Desencolar);
+  cant := cant - 1; >
+  //Uso el recurso
+  <cola(Encolar);
+  cant := cant + 1;>
+}

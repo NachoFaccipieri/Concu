@@ -1,0 +1,10 @@
+1. Existen N personas que desean utilizar un  cajero automático. En este primer caso no se debe tener en cuenta el orden de llegada
+de las personas (cuando  está libre, cualquiera lo puede usar). Suponga que hay una función UsarCajero() que simula su uso
+
+Monitor cajero(){
+    usarCajero();
+}
+
+Process Persona[ID: 1..N]{
+    cajero.usar();
+}

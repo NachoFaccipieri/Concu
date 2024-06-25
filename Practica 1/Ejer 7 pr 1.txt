@@ -1,0 +1,25 @@
+Ejer 7 pr 1
+
+int quiereEntrar[1:N] = ([n] 0);
+int darPermiso[1:N] = ([n] 0);
+bool trabajando;
+
+Process Worker[i = 1..N] {
+  while(true){
+    quiereEntrar[i] = 1;
+    while (darPermiso[i] == 0) skip;
+      trabajando = true;
+      //SC
+      trabajando = false;
+      //SNC
+    }
+}
+
+Process Coordinador {
+  while(true){
+    while(quiereEntrar[i]) == 0) skip;
+    darPermiso[i] = 1;
+    while (trabajando) skip;
+    darPermiso[i] = 0;
+  }
+}

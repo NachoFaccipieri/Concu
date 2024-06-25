@@ -1,0 +1,10 @@
+Ejer 2 pr 1
+
+int cant = 0;
+int N;
+int vector[0..M]
+
+Process recorrido[ID: 0..M] {
+  if(vector[ID] == N)
+    < cant := cant + 1; >
+}

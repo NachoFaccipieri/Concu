@@ -1,0 +1,43 @@
+6. En una empresa de genética hay N clientes que envian secuencias de ADN para que sean analizadas y esperan los resultados
+para poder continuar. Para resolver estos análisis la empresa cuenta con un servidor que resuelve los pedidos de acuerdo
+al orden de llegada de los mismos.
+
+
+Monitor Admin(){
+    cola esp;
+    cond c[N];
+    cond esperando;
+    Text res[N];
+
+    Procedure analizar(ADN: in Text; resultados: out Text; id: in int){
+        esp.push(ADN, id);
+        signal(esperando);
+        wait(c[id]);
+        Resultados = res[id];
+    }
+
+    Procedure llamar(ADNAux: out Text; idAux: out int){
+        If (empty(esp)){
+            wait(esperando);
+        }
+        esp.pop(idAux, ADNAux);
+    }
+
+    Procedure termine(Resul: in Text; idAux: in int){
+        res[idAux] = Resul;
+        signal(c[idAux]);
+    }
+
+}
+
+Process Clientes[ID: 1..N]{
+    Admin.analizar(ADN, ID);
+}
+
+Process Servidor{
+    int idAux;
+    Text resul, ADNAux;
+    Admin.llamar(ADNAux, idAux);
+    //Generar resultados
+    Admin.termine(resul, idAux);
+}

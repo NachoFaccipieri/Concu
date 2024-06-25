@@ -1,0 +1,31 @@
+4. Un cajero automático debe ser usado por N personas de a uno a la vez y según el orden de llegada al mismo. En caso de que llegue 
+una persona anciana, la deben dejar ubicarse al principio de la cola.
+
+bool libre = true;
+queue cola;
+int edad;
+int actual = 0;
+
+Process persona(ID: 1..N){
+    <if(libre) {
+        libre = false;
+        actual = ID;
+    } else {
+        <cola.push(ID,edad))>;
+    }
+    
+    <await actual == ID>;
+
+    //Uso el cajero
+
+    <if(empty(cola){
+        libre = true;
+        actual = 0;
+    } else {
+        actual = cola.pop();
+    }
+}
+
+//<>
+
+

@@ -1,0 +1,69 @@
+5) Se debe simular una maratón con C corredores donde en la llegada hay UNA máquina
+expendedora de agua con capacidad para 20 botellas. Además existe un repositor encargado
+de reponer las botellas de la máquina. Cuando los C corredores han llegado al inicio comienza
+la carrera. Cuando un corredor termina la carrera se dirigen a la máquina expendedora,
+espera su turno (respetando el orden de llegada), saca una botella y se retira. Si encuentra 
+la máquina sin botellas, le avisa al repositor para que cargue nuevamente la máquina con 20 botellas;
+espera a que se haga la recarga; saca una botella y se retira. Nota: maximizar la concurrencia; 
+mientras se reponen las botellas se debe permitir que otros corredores se encolen.
+
+
+sem llegaronTodos = 0;
+sem corredores;
+mutex = 1;
+integer cant = 0;
+esperando[N] = ([N] 0);
+cola c;
+bool libre = true;
+
+Process corredores[id: 1..N]{
+    Integer aux;
+    P(mutex);                   //Exclusión mutua de SC
+    cant := cant + 1            //Sumo 1 cuando un corredor llega
+    if (cant == N){             //Pregunto si el acumulador es igual a la cantidad de corredores
+        for (i:=1 to N-1)       //¿N-1 porque el que despierta ya está despierto y no se duerme nunca
+            V(llegaronTodos);   //Despierto a todos
+        V(mutex);               //Libero la SC
+    } else {                    //Si la cantidad actual no es igual a la cantidad total
+        V(mutex);               //Libero la SC
+        P(llegaronTodos);       //Me duermo
+    }
+    //Inicia la carrera
+
+    P(mutex);                   //Termino y pregunto por el agua
+    if (libre){                 //Si no hay nadie
+        libre = false;          //pongo en false la variable que indica que no hay nadie
+        V(mutex);               //Libero la sc
+    } else {
+        push(c, ID);            //Me encolo
+        V(mutex);               //Libero la sc
+        P(esperando[ID]);       //Espero a que me llamen
+    }
+
+    if(cantBotellas == 0){      //El que va a tomar agua pregunta si las botellas == 0
+        V(recargarBotellas);    //Despierta al repositor
+        P(esperaBotellas);      //Espera a que lo despierte el repositor
+    }
+
+    cantBotellas := cantBotellas - 1;   //No es necesario reservar SC porque nadie más está en este punto
+
+    p(mutex);                   //El que ermina de tomar agua hace p(mutex)
+    if(empty(C)){               //Se fija si la cola está vacia y pone libre en true
+        libre = true;
+    } else {                    //Si alguien está encolado
+        pop(c, Aux);             //desencola
+        V(esperando[Aux]);       //Despierta al proximo
+    }
+    v(mutex);
+}
+
+Process coordinador{
+    while(true){
+        P(recargarBotellas);    //Espera a que falten botellas
+        //Carga las 20 botellas
+        cantBotellas := 20;     //En este punto, todos los procesos estan dormidos
+        V(esperaBotellas);      //Despierta al que estaba esperando
+    }
+
+
+}

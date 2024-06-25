@@ -1,0 +1,14 @@
+Algo que toman en parciales/finales
+Hay un recurso compartido (una impresora) y para ver quién puede usarla se usa Token Passing
+Se tiene un conjunto de procesos (4, en circulo), 
+El A le pasa el token a B, si B no tiene que imprimir, B se lo pasa a C, y así.
+
+Los workers no pueden encargarse de trabajar y ver qué pasa con el token.
+Lo que se debe hacer es hacer un proceso más chiquito (administrador) por cada proceso y estos se comunican entre si
+pasandose el token. Cada proceso "grande" no se comunica con otro proceso "grande", sólo se comunica
+con su administrador avisando que tiene que usar el recurso (imprimir). 
+
+Es decir, los worker (procesos "grandes") se comunican sólo con su administrador. El administrador
+se comunica con los administradores de los demás workers y entre administradores se pasan el token
+para utilizar el recurso. Así los workers sólo trabajan y no se preocupan del token. En todo caso se quedan
+esperando cuando necesiten el recurso y no esté disponible

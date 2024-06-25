@@ -1,0 +1,43 @@
+Se tiene un curso con 40 alumnos, la maestra entrega una tarea distinta a cada alumno,
+luego cada alumno realiza su tarea y se la entrega a la maestra para que la corrija,
+esta revisa la tarea y si está bien le avisa al alumno que puede irse, si la tarea está mal
+le indica los errores, el alumno corregirá esos errores y volverá a entregarle la tarea a la 
+maestra para que realice la corrección nuevamente, esto se repite hasta que la tarea no tenga errores.
+
+tarea[40] = ([40] 0);
+cola corregir;
+bool listo[40] = ([40] false);
+int cant = 40;
+
+
+Process Alumnos[ID: 1..40]{
+    Integer aux;
+    P(tarea[ID]);                           //Espero a que la maestra dé la tarea
+    // resuelve la tarea
+    while(not listo[ID]){                   //Mientras no esté listo, itero hasta terminar de corregir
+        p(mutex);
+        push(corregir, ID);
+        v(mutex);
+        V(tarea);                       //Uso el mismo semáforo para indicar la entrega
+        P(corregido[ID]);                   //Espero la corrección
+    }
+}
+
+Process Maestra{
+    Integer aux;
+    For i:=0 to 40 {
+        V[tarea[i]];                       //Entrego una tarea especifica para cada alumno
+    }
+    while (cant > 0){
+        p(tarea);                       //Espero a que alguien entregue la tarea
+        p(mutex);
+        pop(corregir,Aux);                   //Desencolo la tarea + su ID 
+        v(mutex);
+        //Corrige
+        if(No tiene nada que corregir) {
+            listo[aux] = true;               //Pongo en true la condicion para que deje de iterar
+            cant := cant - 1;               //Resto 1 a la cantidad de tareas que quedan por corregir
+        }
+        V(corregido[aux]);                   //Aviso que termino de corregir
+    }
+}

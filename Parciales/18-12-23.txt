@@ -1,0 +1,84 @@
+1. Resolver con SEMÁFOROS el siguiente problema. Se debe simular el uso de una máquina expendedora de gaseosas
+con capacidad para 100 latas por parte de U usuarios. Además existe un repositor encargado de reponer las latas de
+la máquina. Los usuarios usan la máquina según el orden de llegada. Cuando les toca usarla, sacan una lata y luego
+se retiran. En el caso de que la máquina se quede sin latas, entonces le debe avisar al repositor para que cargue
+nuevamente la máquina en forma completa. Luego de la recarga, saca una lata y se retira. Nota: maximizar la
+concurrencia; mientras se reponen las latas se debe permitir que otros usuarios puedan agregarse a la fila.
+
+
+sem mutex = 1;
+sem espera[U] = ([U] 0);
+sem reponer = 0;
+
+Process Usuarios[ID:1..U]{
+    int idSig;
+    P(mutex);
+    if(libre){
+        libre = false
+        V(mutex);
+    } else {
+        fila.push(ID);
+        V(mutex);
+        P(espera[ID]);
+    }
+    
+    if(cant == 0){
+        V(reponer);
+        P(hayLatas);
+    }
+
+    cant--;
+    P(mutex);
+    if(not empty(fila)){
+        fila.pop(idP);
+        V(espera[idP]);
+    } else {
+        libre = true
+    }
+    V(mutex);
+}
+
+Process repositor{
+    while(true){
+        P(reponer);
+        --repone latas
+        cant = 100;
+        V(hayLatas);
+    }
+}
+
+
+2) Resolver el siguiente problema con MONITORES. En una montaña hay 30 escaladores que en una parte de la subida
+deben utilizar un único paso de a uno a la vez y de acuerdo al orden de llegada al mismo. Nota: sólo se pueden
+utilizar procesos que representen a los escaladores; cada escalador usa sólo una vez el paso.
+
+
+
+Process escalador[ID:1..30]{
+    admin.llegue();
+
+}
+
+Monitor admin{
+    cond sig;
+    bool libre;
+    
+    Procedure llegue(){
+        if(libre){
+            libre=false;
+        } else {
+            cant++;
+            wait(sig);
+        }
+    }
+
+    Procedure pase(){
+        if(cant>0){
+            cant--;
+            signal(sig);
+        } else {
+            libre = true;
+        }
+    }
+
+}

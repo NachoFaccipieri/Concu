@@ -1,0 +1,13 @@
+1. Hay C chicos y hay una bolsa con caramelos que nunca se vacía. Los chicos de a UNO van sacando de a UN caramelo y lo comen.
+Los chicos deben llevar la cuenta de cuantos caramelos se han tomado de la bolsa.
+
+Process Chicos(){
+    int C = 0;
+    sem mutex = 1;
+    while(true){
+        p(mutex);
+        C = C + 1;
+        //tomar caramelo
+        v(mutex);
+    }
+}

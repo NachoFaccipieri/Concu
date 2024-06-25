@@ -1,0 +1,113 @@
+1) En una empresa de software hay N personas que prueban un nuevo producto para encontrar errores, cuando encuentran uno generan
+un reporte para que un empleado corrija el error (las personas no deben reciben ninguna respuesta). El empleado toma los reportes
+de acuerdo al orden de llegada, los evalúan y hace las correcciones necesarias.
+
+chan reporte(Text);
+
+Process persona[ID:1..P]{
+    Text: R;
+    send reporte(R);
+}
+
+Process empleado{
+    Text: R;
+    receive reporte(R);
+    //Corregir error
+}
+
+2) En una empresa de software hay N personas que prueban un nuevo producto para encontrar errores, cuando encuentran uno generan
+un reporte para que un empleado corrija el error y esperan la respuesta del mismo. El empleado toma los reportes de acuerdo al
+orden de llegada, los evalúan y hace las correcciones necesarias y le responde a la persona que hizo el reporte.
+
+chan Reporte(Text);
+chan devolucion[1..P](Text);
+
+Process persona[ID:1..P]{
+    Text: R;
+    send Reporte(R, ID);
+    receive devolucion[ID](R);
+}
+
+Process empleado{
+    Text: R;
+    int ID;
+    receive Reporte(R, ID);
+    //Corregir error
+    send devolucion[ID](R);
+}
+
+3) En una empresa de software hay N personas que prueban un nuevo producto para encontrar errores, cuando encuentran uno generan
+un reporte para que uno de los 3 empleados corrija el error y esperan la respuesta del mismo. El empleado toma los reportes de 
+acuerdo al orden de llegada, los evalúan, hacen las correcciones necesarias y le responde a la persona que hizo el reporte.
+
+chan Reporte(Text);
+chan devolucion[1..P](Text);
+
+Process persona[ID:1..P]{
+    Text: R;
+    send Reporte(R, ID);
+    receive devolucion[ID](R);
+}
+
+Process empleado[ID:1..3]{
+    Text: R;
+    receive Reporte(R, idP);
+    //Corregir error
+    send devolucion[idP](R);
+}
+
+4) En una empresa de software hay N personas que prueban un nuevo producto para encontrar errores, cuando encuentran uno generan
+un reporte para que un empleado corrija el error y esperan la respuesta del mismo. El empleado toma los reportes de 
+acuerdo al orden de llegada, los evalúan, hacen las correcciones necesarias. Cuando no hay reportes para atender el empleado se
+dedica a leer durante 10 minutos.
+
+chan Reporte(Text);
+chan devolucion[1..P](Text);
+
+Process persona[ID:1..P]{
+    Text: R;
+    send Reporte(R, ID);
+    receive devolucion[ID](R);
+}
+
+Process empleado{
+    Text: R;
+    int ID;
+    if (not empty(Reporte)){
+        receive Reporte(R, ID);
+        //Corregir error
+        send devolucion[ID](R);
+    else{
+        read(10);
+    }
+}
+
+5)  En una empresa de software hay N personas que prueban un nuevo producto para encontrar errores, cuando encuentran uno generan
+un reporte para que uno de los 3 empleados corrija el error (las personas no esperan ninguna resputa). Los empleados toman los
+reportes de acuerdo al orden de llegada, los evalúan, hacen las correcciones necesarias. Cuando no hay reportes para atender el
+empleado se dedica a leer durante 10 minutos.
+
+chan Reporte(Text);
+chan devolucion[1..P](Text);
+
+Process persona[ID:1..P]{
+    Text: R;
+    send Reporte(R);
+}
+
+Process admin{
+    receive listo(idEmp);
+    if (empty(Reporte)){
+        R = "vacio";
+    }else{
+        receive Reporte(R);
+    }
+    send repAdm(R, idEmp);
+}
+
+Process empleado[ID:1..3]{
+    Text: R;
+    int idP;
+    send listo(ID);
+    receive repAdm(R);
+}

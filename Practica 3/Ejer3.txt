@@ -1,0 +1,39 @@
+3. En un corralón de materiales hay un empleado que debe atender a N clientes de acuerdo al
+orden de llegada. Cuando un cliente es llamado por el empleado para ser atendido, le da una
+lista con los productos que comprará, y espera a que el empleado le entregue el
+comprobante de la compra realizada.
+
+
+Monitor Corralon{
+    Cond c;
+    Integer cant;
+    Cond lista[N];
+    
+    
+    Process llegada(id: in int){
+        cant++;
+        signal(esperando);
+        Wait(c);
+        cant--;
+        Signal(lista)           //Entrega la lista de los productos
+
+    } 
+
+    Process atender(){
+        if(cant == 0){
+            wait(esperando);
+        }
+        Signal(c);
+        Wait(lista);            //Recibe lista de productos
+
+    }
+}
+
+
+Process clientes[ID: 1..N]{
+    Corralon.llegada(ID);
+}
+
+Process empleado(){
+    Corralon.atender();
+}

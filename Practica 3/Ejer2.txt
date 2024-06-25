@@ -1,0 +1,162 @@
+Existen N personas que deben fotocopiar un documento cada una. Resolver cada ítem usando monitores:
+
+a) Implemente una solución suponiendo que existe una única fotocopiadora compartida por todas las personas,
+y las mismas la deben usar de a una persona a la vez, sin importar el orden. Existe una función Fotocopiar()
+ que simula el uso de la fotocopiadora. Sólo se deben usar los procesos que representan a las Personas 
+ (y los monitores que sean necesarios).
+
+ Monitor Fotocopiadora(){
+    Procedure Fotocopiar(){
+        //Usar fotocopiadora        
+    }
+ }
+
+ Process personas[ID:1..N]{
+    Fotocopiadora.fotocopiar();
+ }
+
+
+ b) Modifique la solución de (a) para el caso en que se deba respetar el orden de llegada.
+
+
+Monitor Fotocopiadora(){
+    boolean enUso = false;;
+    cond cola;
+    integer cant;
+
+    Procedure Fotocopiar(){
+        if (not enUso) {            //Pregunto por el estado de la Fotocopiadora
+            enUso = true;           //Si nadie la está usando, pongo la variable en true
+        } else {                    //Si se está usando
+            cant++;
+            wait(C);                //Se duermen en el orden en que llegan
+        }
+    }
+
+    Procedure termine(){
+        if (cant == 0){
+            enUso = false;
+        } else {
+            cant--;
+            signal(c);
+        }
+    }
+ }
+
+ Process personas[ID:1..N]{
+    Fotocopiadora.fotocopiar();
+    //Usar fotocopiadora
+    Fotocopiadora.termine();
+ }
+
+
+ C) Modifique la solución de (b) para el caso en que se deba dar prioridad de acuerdo a la edad de cada persona cuando la fotocopiadora está libre la debe usar la persona de mayor edad entre las que estén esperando para usarla).
+
+
+Monitor Fotocopiadora(){
+    boolean enUso = false;;
+    cond cola[N];
+    integer cant;
+    Cola c;
+    integer idAux;
+
+    Procedure Fotocopiar(edad, id: in int){
+        if (not enUso) {            //Pregunto por el estado de la Fotocopiadora
+            enUso = true;           //Si nadie la está usando, pongo la variable en true
+        } else {                    //Si se está usando
+            encolar(c, id, edad)
+            cant++;
+            wait(cola[id]);                //Se duermen en el orden en que llegan
+        }
+    }
+
+    Procedure termine(){
+        if (cant == 0){
+            enUso = false;
+        } else {
+            cant--;
+            desencolar(c, idAux, edad);
+            signal(cola[idAux]);
+        }
+    }
+ }
+
+ Process personas[ID:1..N]{
+    Fotocopiadora.fotocopiar(ID, edad);
+    //Usar fotocopiadora
+    Fotocopiadora.termine();
+ }
+
+
+D) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden dado por el identificador del proceso (la persona X no puede usar la fotocopiadora hasta que no haya terminado de usarla la persona X-1).
+
+ Monitor Fotocopiadora(){
+    integer act: 1;
+    Cond c[N];
+
+    Procedure Fotocopiar(id: in int){
+        If (act <> id){
+            Wait(c[id]);
+        }
+    }
+
+    Procedure Termine(id: in int){
+        id++;
+        act++;
+        Signal(c[id]);
+    }
+ }
+
+ Process personas[ID:1..N]{
+    Fotocopiadora.fotocopiar(ID);
+ }
+
+
+e) Modifique la solución de (b) para el caso en que además haya un Empleado que le indica a cada persona cuando debe usar la fotocopiadora.
+
+ Monitor Fotocopiadora(){
+    boolean enUso = false;;
+    cond c;
+    integer cant;
+
+
+    Process fotocopiar(){
+        if(cant == 0) {             //Si no hay nadie esperando
+            cant++;                 //Sumo uno al contador de quieres quieren usarla
+            signal(sinUso);       //Despierto al empleado
+        } else {
+            cant++;
+        }
+        Wait(C);            //Necesita dormirse el proceso que despertó al empleado ??
+    }
+
+    Procedure termine(){
+        cant--;
+        enUso = false;
+        signal(sinUso);
+    }
+
+    Procedure proximo(){
+        While (enUso){
+            wait(sinUso);
+        }
+        
+        if(cant == 0){
+            wait(sinUso);
+        } else {
+            enUso = true;
+            Signal(C);
+        }
+    }
+ }
+
+
+ Process personas[ID:1..N]{
+    Fotocopiadora.fotocopiar();
+    //Usar fotocopiadora
+    Fotocopiadora.termine();
+ }
+
+ Process empleado{
+    Fotocopiadora.proximo();
+ }

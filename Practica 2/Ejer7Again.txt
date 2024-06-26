@@ -1,0 +1,35 @@
+7) En una herrería hay 15 empleados que forman 5 grupos de 3 personas; los grupos se forman de acuerdo 
+al orden de llegada (los 3 primeros pertenecen al grupo 1, los 3 siguientes al grupo 2, y así 
+sucesivamente). Ni bien conoce el grupo al que pertenece el empleado comienza a trabajar (no debe 
+esperar al resto de grupo para comenzar). Cada grupo debe hacer exactamente P unidades de un producto 
+(cada unidad es hecha por un único empleado). Al terminar de hacer las P unidades de un grupo, sus 3 
+empleados se retiran. Nota: maximizar la concurrencia; ningún grupo puede hacer unidades de más.
+
+
+int grupos[5] = ([5] 0);
+int unidad[5] = ([5] 0);
+int act = 1;
+sem mutex = 1;
+sem grp[5] = ([5] 1);
+
+Process empleado[ID:1..15]{
+    P(mutex);
+    if(grupos[act] == 3){
+        act++;
+    }
+    miGrp = act;
+    grupos[act]++;
+    V(mutex);
+
+    --trabajar
+
+    P(grp[miGrp]);
+    while(cant<P){
+        Unidad[miGrp]++;
+        V(grp[miGrp]);
+        --HacerProducto
+        P(grp[miGrp]);
+    }
+    V[grp[miGrp]];
+
+}

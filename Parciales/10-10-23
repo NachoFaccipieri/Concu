@@ -120,3 +120,45 @@ Monitor admin{
         wait(fin);
     }
 }
+
+
+---------------------------------------------------------------------------------------
+
+2. Resolver con MONITORES el siguiente problema: En una elección estudiantil, se utiliza una máquina para voto
+electrónico. Existen N Personas que votan y una Autoridad de Mesa que les da acceso a la máquina de acuerdo con el
+orden de llegada, aunque ancianos y embarazadas tienen prioridad sobre el resto. La máquina de voto sólo puede ser
+usada por una persona a la vez. Nota: la función Votar() permite usar la máquina.
+
+Process personas[ID:1..N]{
+    admin.llegue(ID,prio);
+    Votar();
+    admin.termine();
+}
+
+Process AutoridadDeMesa{
+    While(true){
+        admin.listo();
+    }
+}
+
+Monitor admin{
+
+    Procedure llegue(ID: IN int; Prio: IN Text){
+        fila.push(ID,prio);
+        signal(autoridad);
+        wait(miTurno[ID]);
+    }
+
+    Procedure termine(){
+        signal(fin);
+    }
+
+    Procedure listo(){
+        if(empty(fila)){
+            wait(autoridad);
+        }
+        fila.pop(idP,prio);
+        signal(miTurno[idP]);
+        wait(fin);
+    }
+}

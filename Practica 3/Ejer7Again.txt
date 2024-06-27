@@ -1,0 +1,38 @@
+7. En una empresa de genética hay N clientes que envian secuencias de ADN para que sean analizadas y esperan los resultados
+para poder continuar. Para resolver estos análisis la empresa cuenta con DOS servidores que resuelven los pedidos de acuerdo
+al orden de llegada de los mismos. 
+
+Process clientes[ID:1..N]{
+    admin.llegue(ID);
+}
+
+Process servidores[ID:1..2]{
+    int idP;
+    admin.libre(idP);
+    res = Analisis();
+    admin.listo(idP, res);
+
+}
+
+Monitor admin{
+
+    Procedure llegue(ID: IN int){
+        fila.push(ID);
+        signal(sig);
+        wait(turno[ID]);
+        res = resultados[idP];
+    }
+
+    Procedure listo(IN: INT idP; IN: Text res){
+        resultados[idP] = res;
+        signal(turno[idP]);
+    }
+
+    Procedure libre(IN: OUT idP){
+        if(empty(fila)){
+            wait(sig);
+        }
+        fila.pop(idP);
+    }
+
+}

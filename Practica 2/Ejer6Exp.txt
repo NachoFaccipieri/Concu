@@ -31,3 +31,37 @@ Process escaladores[ID: 1..30]{
     }
     V(mutex);
 }
+
+
+-----------------------------------------------------------------------------------------------------------------------------
+
+6. En una montaña hay 30 escaladores que en una parte de la subida deben utilizar un único paso de a uno a la vez y de acuerdo
+al orden de llegada al mismo.
+
+sem mutex = 1;
+bool libre = true;
+Queue fila;
+
+Process escalador[ID:1..30]{
+
+    P(mutex);
+    if(libre){
+        libre = false;
+        V(mutex);
+    } else {
+        fila.push(ID);
+        V(mutex);
+        P(espera[ID]);
+    }
+
+    --Usa el paso
+
+    P(mutex)
+    If(empty(fila)){
+        libre=true;
+    } else {
+        fila.pop(idP);
+        V(espera[ID]);
+    }
+    V(mutex);
+}

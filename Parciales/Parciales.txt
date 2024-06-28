@@ -885,3 +885,161 @@ monitor admin{
 
 -------------------------------------------------------------------------------------------------------------
 
+Semaforos
+4. En una empresa de genética hay N clientes que envían secuencias de ADN para que sean analizadas y esperan los resultados para
+poder continuar. Para resolver estos análisis la empresa cuenta con 1 servidor que resuelve los pedidos de acuerdo al orden
+de llegada de los mismos.
+
+sem mutex = 1;
+
+Process clientes[ID:1..N]{
+    P(mutex);
+    fila.push(ID, resul);
+    V(sig);
+    V(mutex);
+    P(espera[ID]);
+    resultado = resultados[ID];
+}
+
+Process servidor{
+    while(true){
+        P(sig);
+        P(mutex);
+        fila.pop(idP, resul);
+        V(mutex);
+        resul = analisis();
+        resultados[idP] = resul;
+        V(espera[idP]);
+    }
+}
+
+6. En una montaña hay 30 escaladores que en una parte de la subida deben utilizar un único paso de a uno a la vez y de acuerdo
+al orden de llegada al mismo.
+
+Process escalador[ID:1..30]{
+    P(mutex);
+    if(libre){
+        libre = false;
+        V(mutex);
+    } else {
+        fila.push(ID);
+        V(mutex);
+        P(espera[ID]);
+    }
+
+    --Usa el paso
+
+    P(mutex);
+    if(empty(fila)){
+        libre = true;
+    } else {
+        fila.pop(idP);
+        V(espera[idP]);
+    }
+    V(mutex);
+}
+
+a) En una estación de trenes, asisten P personas que deben realizar una carga de su tarjeta SUBE en la terminal disponible. La 
+terminal es utilizada en forma exclusiva por cada persona de acuerdo con el orden de llegada. Implemente una solución utilizando 
+sólo emplee procesos Persona. Nota: la función UsarTerminal() le permite cargar la SUBE en la terminal disponible.
+
+Process personas[ID:1..P]{
+    P(mutex);
+    if(libre){
+        libre = false;
+        V(mutex);
+    } else {
+        push.fila(ID);
+        V(mutex);
+        P(espera[ID]);
+    }
+
+    UsarTerminal();
+
+    p(mutex);
+    If(empty(fila)){
+        libre = true;
+    } else {
+        fila.pop(idP);
+        V(espera[idP]);
+    }
+    V(mutex);
+}
+
+------ídem con T terminales-----
+
+int libres = T;
+sem espera[P] = ([P] 0);
+sem mutex = 1;
+sem terminal = 1;
+Queue fila;
+Queue terminales;
+
+Process personas[ID:1..P]{
+    P(mutex);
+    if (libres>0){
+        libres--;
+        V(mutex);
+    } else {
+        fila.push(ID);
+        V(mutex)
+        P(espera[ID]);
+    }
+
+    p(terminal);
+    terminales.pop(t);
+    v(terminal);
+
+    usarTerminal(t);
+
+    p(terminal);
+    terminales.push(t);
+    v(terminal;)
+    
+    P(mutex);
+    if(empty(fila)){
+        libres++;
+    } else {
+        fila.pop(idP);
+        V(espera[idP]);
+    }
+    V(mutex);
+}
+
+--------------------------------------------------------------------------------------------------
+
+Resolver con MONITORES el siguiente problema: En una elección estudiantil, se utiliza una máquina para voto electrónico. Existen
+N Personas que votan y una Autoridad de Mesa que les da acceso a la máquina de acuerdo con el orden de llegada, aunque ancianos 
+y embarazadas tienen prioridad sobre el resto. La máquina de voto sólo puede ser usada por una persona a la vez. Nota: la función
+Votar() permite usar la máquina.
+
+Process persona[ID:1..N]{
+    admin.llegue(ID, prio);
+    Votar();
+    Admin.fin();
+}
+
+Process autoridadMesa{
+
+}
+
+Monitor admin{
+    
+    Procedure llegue(ID: IN INT; prio: IN Text){
+        fila.push(ID, prio);
+        signal(sig);
+        wait(miTurno[ID]);
+    }
+
+    Procedure fin(){
+        signal(libre);
+    }
+
+    Procedure autoridad{
+        if (empty(fila)){
+            wait(sig);
+        }
+        fila.pop(idP, prio);
+        wait(libre);
+    }
+}

@@ -2,7 +2,6 @@
 de las personas. Suponga que hay una función UsarCajero() que simula el uso del cajero.
 
 
-
 bool libre = true;
 
 Monitor cajero(){
@@ -67,3 +66,37 @@ Monitor cajero{
     }
 }
 */
+
+
+---------------------------------------------------------------------------------
+
+2. Existen N personas que desean utilizar un cajero automático. Se debe tener en cuenta el orden de llegada
+de las personas. Suponga que hay una función UsarCajero() que simula el uso del cajero.
+
+Process personas[ID:1..N]{
+    admin.llegue();
+}
+
+Monitor admin{
+    bool libre;
+    signal sig;
+
+    Procedure llegue(){
+        if(libre){
+            libre = false;
+        } else {
+            cant++;
+            wait(sig);
+        }
+    }
+
+    Procedure termine(){
+        if(cant == 0){
+            libre = true
+        } else {
+            cant--;
+            signal(sig);
+        }
+    }
+
+}

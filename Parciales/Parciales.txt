@@ -1,0 +1,887 @@
+
+----------18-12-23------------
+
+1.
+Resolver con SEMÁFOROS el siguiente problema. Se debe simular el uso de una máquina expendedora de gaseosas con capacidad para 100
+latas por parte de U usuarios. Además existe un repositor encargado de reponer las latas de la máquina. Los usuarios usan la máquina
+según el orden de llegada. Cuando les toca usarla, sacan una lata y luego se retiran. En el caso de que la máquina se quede sin
+latas, entonces le debe avisar al repositor para que cargue nuevamente la máquina en forma completa. Luego de la recarga, saca una
+lata y se retira. Nota: maximizar la concurrencia; mientras se reponen las latas se debe permitir que otros usuarios puedan
+agregarse a la fila.
+
+sem mutex = 1;
+sem espera[u] = ([U] 0);
+bool libre = true;
+cantLatas = 100;
+
+
+Process usuarios[ID:1..U]{
+    p(mutex);
+    if (libre){
+        libre = false;
+        V(mutex);
+    } else {
+        fila.push(ID);
+        V(mutex);
+        P(espera[ID]);
+    }
+
+    if(cantLatas == 0){
+        V(reponer);
+        P(esperandoLatas);
+    }
+
+    cantLatas--;
+
+    p(mutex);
+    if(empty(fila)){
+        libre = true;
+    } else {
+        fila.pop(idP);
+        V(espera[idP]);
+    }
+    V(mutex);
+}
+
+Process repositor{
+    while(True){
+        P(reponer);
+        --Reponer
+        cantLatas = 100;
+        V(esperandoLatas);
+    }
+}
+
+
+2) Resolver el siguiente problema con MONITORES. En una montaña hay 30 escaladores que en una parte de la subida deben utilizar un
+único paso de a uno a la vez y de acuerdo al orden de llegada al mismo. Nota: sólo se pueden utilizar procesos que representen a los
+escaladores; cada escalador usa sólo una vez el paso.
+
+
+Process escalador[ID:1..30]{
+    admin.llegue();
+}
+
+Monitor admin{
+
+    Procedure llegue(){
+        if(libre){
+            libre=false;
+        } else {
+            cant++;
+            wait(espera);
+        }
+    }
+
+    Procedure siguiente(){
+        if(cant == 0){
+            libre=true;
+        } else {
+            cant--;
+            signal(espera);
+        }
+    }
+}
+
+
+
+---------------------------------------------------------------------------------------------------------
+
+---------4-12-23-----------
+
+1.
+Un sistema debe validar un conjunto de 10000 transacciones que se encuentran disponibles en una estructura de datos. Para ello, el
+sistema dispone de 7 workers, los cuales trabajan colaborativamente validando de a 1 transacción por vez cada uno. Cada validación
+puede tomar un tiempo diferente y para realizarla los workers disponen de la función Validar(t), la cual retorna como resultado un
+número entero entre 0 al 9. Al finalizar el procesamiento, el último worker en terminar debe informar la cantidad de transacciones
+por cada resultado de la función de validación. Nota: maximizar la concurrencia.
+
+Queue transacciones;
+int val;
+sem mutex = 1;
+sem valoresVal[9] = ([9] 1);
+sem espera = 0;
+int validaciones[9] = ([9] 0);
+
+Process worker[ID:1..7]{
+    P(mutex);
+    while(not empty(transacciones)){
+        transacciones.pop(t);
+        V(mutex);
+        val = Validar(t);
+        
+        P(valoresVal[val]);
+        validaciones[val]++;
+        V(valoresVal[val]);
+
+        P(mutex);
+    }
+    V(mutex);
+
+    P(llegada);
+    cant++;
+    if(cant == 7){
+        for (i=1 to 7){
+            V(espera);
+        }
+    } else {
+        V(llegada);
+        P(espera);
+    }
+    V(llegada);
+}
+
+
+2) En una empresa trabajan 20 vendedores ambulantes que forman 5 equipos de 4 personas cada uno (cada vendedor conoce previamente a
+que equipo pertenece). Cada equipo se encarga de vender un producto diferente. Las personas de un equipo se deben juntar antes de
+comenzar a trabajar. Luego cada integrante del equipo trabaja independientemente del resto vendiendo ejemplares del producto 
+correspondiente. Al terminar cada integrante del grupo debe conocer la cantidad de ejemplares vendidos por el grupo.
+Nota: maximizar la concurrencia.
+
+Process vendedor[ID:1..20]{
+    grupo[miGrp].llegue();
+    CantV = venta();
+    grupo[miGrp].termine(cantV, total);
+
+}
+
+Monitor grupo[ID:1..4]{
+
+    Procedure llegue(){
+        cant++;
+        if(cant == 4){
+            signal_all(esperando);
+        } else {
+            wait(esperando);
+        }
+    }
+
+    Procedure termine(cantV: IN INT; total: OUT INT){
+        cant--;
+        ventasTotales += cantV;
+        if(cant == 0){
+            signal_all(esperando);
+        } else {
+            wait(esperando);
+        }
+        total = ventasTotales;  
+    }
+}
+
+
+---------------------------------------------------------------------------------------------------------
+
+---------10-10-23-----------
+
+a) En una estación de trenes, asisten P personas que deben realizar una carga de su tarjeta SUBE en la terminal disponible. La
+terminal es utilizada en forma exclusiva por cada persona de acuerdo con el orden de llegada. Implemente una solución utilizando
+sólo emplee procesos Persona. Nota: la función UsarTerminal() le permite cargar la SUBE en la terminal disponible.
+
+Process persona[ID:1..P]{
+    P(mutex);
+    if(libre){
+        libre = false;
+        V(mutex);
+    } else {
+        fila.push(ID);
+        V(mutex);
+        P(espera[ID]);
+    }
+
+    UsarTerminal();
+
+    P(mutex);
+    If(empty(fila)){
+        libre=true;
+    } else{
+        fila.pop(idP);
+        V(espera[idP]);
+    }
+    V(mutex);
+}
+
+
+b) Resuelva el mismo problema anterior pero ahora considerando que hay T terminales disponibles. Las personas realizan una única
+fila y la carga la realizan en la primera terminal que se libera. Recuerde que sólo debe emplear procesos Persona. Nota: la función
+UsarTerminal(t) le permite cargar la SUBE en la terminal t.
+
+libres ++;
+Queue terminales;
+Queue fila;
+sem mutex = 1;
+sem terminal = 1;
+
+Process persona[ID:1..P]{
+    P(mutex);
+    if(libres == 0){
+        fila.push(ID);
+        V(mutex);
+        P(sig[ID]);
+    } else {
+        libres --;
+    }
+
+    P(terminal);
+    terminales.pop();
+    V(terminal);
+
+    UsarCajero();
+
+    P(terminal);
+    terminales.push();
+    V(terminal);
+
+    P(mutex);
+    If(empty(fila)){
+        libres++;
+    } else {
+        fila.pop(idP);
+        V(sig[idP]);
+    }
+}
+
+2.Resolver con MONITORES el siguiente problema: En una elección estudiantil, se utiliza una máquina para voto electrónico. Existen N
+Personas que votan y una Autoridad de Mesa que les da acceso a la máquina de acuerdo con el orden de llegada, aunque ancianos y 
+embarazadas tienen prioridad sobre el resto. La máquina de voto sólo puede ser usada por una persona a la vez. Nota: la función
+Votar() permite usar la máquina.
+
+
+Process personas[ID:1..N]{
+    admin.llegue(ID,prio);
+    Votar();
+    admin.fin();
+}
+
+Process autoridadDeMesa{
+    while(true){
+        admin.autoridad();
+    }
+}
+
+Monitor admin{
+    Queue fila;
+    int idP;
+
+    Procedure llegue(){
+        fila.push(id,Prio);
+        signal(siguiente);
+        wait(miTurno[ID]);
+    }
+
+    Procedure fin(){
+        signal(listo);
+    }
+
+    Procedure autoridad{
+        if (empty(fila)){
+            wait(siguiente);
+        }
+        fila.pop(idP, prio);
+        signal(miTurno[idP]);
+        wait(listo);
+    }
+}
+
+-------------------------------------------------------------------------------------------------
+
+2. Resolver con MONITORES el siguiente problema. En un sistema operativo se ejecutan 20 procesos que periódicamente realizan cierto
+cómputo mediante la función Procesar(). Los resultados de dicha función son persistidos en un archivo, para lo que se requiere de
+acceso al subsistema de E/S. Sólo un proceso a la vez puede hacer uso del subsistema de E/S, y el acceso al mismo se define por la
+prioridad del proceso (menor valor indica mayor prioridad).
+
+
+Process proceso[ID:1..20]{
+    int resul;
+    while(true){
+        resul = Procesar();
+        admin.llegue(resul, ID);
+        --persistir archivo
+        admin.fin();
+    }
+}
+
+Monitor admin{
+    bool libre = true;
+
+    Procedure llegue(resul, ID: IN INT){
+        if(libre){
+            libre = false;
+        } else {
+            fila.push(resul, ID);
+            wait(espera[ID]);
+        }
+    }
+
+    Procedure fin(){
+        if(empty(fila)){
+            libre = true;
+        } else {
+            fila.pop(resul, idP);
+            signal(espera[idP]);
+        }
+    }
+}
+
+
+--------------------------------------------------------------------------------------------------------
+
+1. Resolver con SENTENCIAS AWAIT (<> y/o <await B; S>) el siguiente problema. Se debe 
+simular una maratón con C corredores donde en la llegada hay UNA máquinas 
+expendedoras de botella de agua. Cuando los C corredores han llegado al inicio comienza la 
+carrera. Cuando un corredor termina la carrera se dirige a la máquina expendedora, espera su 
+turno (respetando el orden de llegada), saca una botella y se retira. Nota: maximizar la 
+concurrencia.
+
+int cant;
+bool comienza;
+
+Process personas[ID:1..C]{
+    <cant++;>
+    <await cant == C>;
+
+    //correr
+
+    <if(siguiente == -1){
+        siguiente = ID;
+    }>
+
+    if(siguiente != id){
+        <fila.push(ID);>
+        <await siguiente == ID>;
+    }
+
+    //Toma agua
+
+    <if(empty(fila)){
+        siguiente == -1;
+    } else {
+        fila.pop(idP);
+        siguiente == idP;
+    }>   
+}
+
+2. Resolver con SEMÁFOROS la siguiente situación. En una herrería hay 15 empleados que 
+forman 5 grupos de 3 personas; los grupos se forman de acuerdo al orden de llegada (los 3 
+primeros pertenecen al grupo 1, los 3 siguientes al grupo 2, y así sucesivamente). Ni bien 
+conoce el grupo al que pertenece el empleado comienza a trabajar (no debe esperar al resto 
+de grupo para comenzar). Cada grupo debe hacer exactamente P unidades de un producto 
+(cada unidad es hecha por un único empleado). Al terminar de hacer las P unidades de un 
+grupo, sus 3 empleados se deben juntar para retirarse juntos. Nota: maximizar la 
+concurrencia; ningún grupo puede hacer unidades de más. 
+
+sem mutex = 1;
+sem unidadesGrp[5] = ([5] 1);
+int unidades[5] = ([5] 0);
+int llegue[5] = ([5] 0);
+int grpAct = 1;
+int cant;
+
+Process empleado[ID:1..15]{
+    int miGrp;
+
+    P(mutex);
+    if(cant == 3){
+        grpAct++;
+        cant = 0;
+    }
+    miGrp = grpAct;
+    cant++;
+    V(mutex);
+
+    P(unidadesGrp[miGrp]);
+    while(unidades[miGrp] < P){
+        unidades[miGrp]++;
+        V(unidadesGrp[miGrp]);
+        //Hacer unidad
+        P(unidades[miGrp]);
+    }
+    V(unidades[miGrp]);
+
+    P(salida[miGrp]);
+    llegue[Grp]++;
+    if(llegue == 3){
+        for (i=1 to 3){
+            V(espera[miGrp]);
+            V(espera[miGrp]);
+        }
+    }
+    V(salida[miGrp]);
+    P(espera[miGrp]);
+    
+}
+
+------------------------------------------------------------------------------------------------------------
+
+
+Simular la atención en un Centro de Vacunación con 8 puestos para vacunar contra
+el coronavirus. Al Centro acuden 200 pacientes para ser vacunados, cada uno de
+ellos ya conoce el puesto al que se debe dirigir. En cada puesto hay UN empleado
+para vacunar a los pacientes asignados a dicho puesto, y lo hace de acuerdo al
+orden de llegada al mismo. Cada paciente al llegar al puesto que tenía asignado
+espera a que lo llamen para vacunarlo, y al terminar se retira. Nota: suponer que
+existe una función Vacunar() que simula la atención del paciente por parte del
+empleado. Suponer que cada puesto tiene asignado 25 pacientes. Todos los
+procesos deben terminar.
+
+sem mutex = 1;
+sem miTurno[200] = ([200] 0);
+Queue fila[8];
+
+Process personas[ID:1..200]{
+    P(mutex[puesto]);
+    fila[puesto].push(ID);
+    V(mutex[puesto]);
+    V(siguiente[puesto]);
+    P(fin[ID]);
+}
+
+Process puestos[ID:1..8]{
+    int idP;
+    P(siguiente[ID]);
+    P(mutex[ID])
+    fila[ID].pop(idP);
+    V(mutex[ID]);
+    Vacunar();
+    V(fin[idP]);
+}
+
+
+-------------------------------------------------------------------------------------------------
+
+2) Resolver el siguiente problema con MONITORES. En una montaña hay 30 escaladores que en una parte de la subida
+deben utilizar un único paso de a uno a la vez y de acuerdo al orden de llegada al mismo. Nota: sólo se pueden
+utilizar procesos que representen a los escaladores; cada escalador usa sólo una vez el paso.
+
+Process escaladores[ID:1..30]{
+    admin.llegue();
+    --paso
+    admin.fin();
+}
+
+Monitor admin{
+
+    Procedure llegue(){
+        if(libre){
+            libre = false;
+        } else {
+            cant++;
+            wait(esperando);
+        }
+    }
+
+    Procedure fin(){
+        if(cant == 0){
+            libre = true;
+        } else {
+            signal(esperando);
+            cant--;
+        }
+    }
+}
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+Resolver con sentencias await el siguiente problema. Para un partido de futbol se venden E entradas de forma online y hay P personas
+que intentan comprar una entrada formando una unica fila. Para la venta existen 5 boleterías virtuales que van atendiendo los 
+pedidos de las personas de acuerdo con el orden de llegada. Cunado una boletería atiende a una persona, si aún quedan entradas
+disponibles le envía el número de entrada vendida, sino le indica que no hay más entradas
+
+bool miTurno[P] = false;
+
+Process persona[ID:1..P]{
+    <fila.push(ID)>;
+    <miTurno[ID]>;
+    miEntrada = entrada[ID];
+}
+
+Process boletería[ID:1..5]{
+    entradas = E;
+
+    while(entradas != 0 || !fin){
+        <await not empty(fila)>
+        <fila.pop(idP)>;
+
+        <if(entradas != 0){
+            entrada[idP] = entradas;
+            entradas--;
+        } else {
+            entrada[idP] = -1;
+        }>
+        miTurno[ID] = true;
+    }
+    fin = true;
+}
+
+
+
+3. Resolver con MONITORES el siguiente problema. Para un experimento se tiene una red con 15 controladores de temperatura
+y un módulo central. Los controladores cada Cierto tiempo toman la temperatura mediante la funcion medir() y se la envían a la
+central para que esta le indique que debe hacer (número de 1 a 10). y luego realiza esa acción mediante la funcion actuar(). La
+central atiende los pedidos de los controladores de acuerdo al orden de llegada, usando la función determinar() para determinar
+la acción que deberá hacer ese controlador (número de 1 a 10). Nota: el tiempo que espera cada controlador para tomar
+nuevamente la temperatura empieza a contar después de haber ejecutado la función actuar().
+
+
+Process controlador[ID:1..15]{
+    int queHacer;
+    while(true){
+        medir();
+        admin.llegue(queHacer);
+        actuar(queHacer);
+    }
+}
+
+Process central{
+    int idP;
+    while(True){
+        admin.siguiente(idP);
+        accion = determinar();
+        admin.fin(accion, idP);
+    }
+
+}
+
+Monitor admin{
+
+    Procedure llegue(queHacer: OUT INT){
+        fila.push(ID,queHacer);
+        signal(estoy);
+        wait(espera[ID]);
+        queHacer = vectHacer[ID];
+    }
+
+    Procedure siguiente(idP: IN INT){
+        if (empty(fila)){
+            wait(sig);
+        }
+        fila.pop(idP, queHacer);
+    }
+
+    Procedure fin(accion: OUT INT; idP: IN INT){
+        vectHacer[idP] = accion;
+        signal(espera[idP]);
+    }
+}
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+Simular el funcionamiento de un Complejo de Canchas de Futbol 5 que posee 8
+canchas y donde hay una máquina encargada de asignar las canchas. Al complejo
+acuden 80 jugadores divididos en 8 grupos (cada grupo tiene las 10 personas que
+jugarán en una cancha), cada jugador ya conoce a qué grupo pertenece. Cuando un
+jugador llega le indica a la máquina el grupo al que pertenece para que esta le
+indique el número de cancha a la cual debe ir, y luego se dirige a ella. Cuando los 10
+integrantes de un grupo han llegado a la cancha que les corresponde, comienzan a
+jugar el partido que dura 50 minutos; y luego se retiran. La máquina asigna el
+número de cancha de acuerdo al orden en que llega el primer jugador de cada
+grupo. Nota: maximizar la concurrencia
+
+
+Process jugador[ID:1..80]{
+    int miGrp, numCan;
+    maquina.llegue(miGrp, numCan);
+    canchas[numCan].llegue();
+
+}
+
+Process cancha[ID:1..8]{
+    canchas[ID].esperando();
+    delay(50);
+    canchas[ID].fin();
+}
+
+Monitor maquina{
+    int canchas[8] = ([8] 0);
+    int act = 0;
+
+    procedure llegue(miGrp: IN INT; numCan: OUT INT){
+        if(canchas[miGrp] == 0){
+            canchas[miGrp] = act++;
+        }
+        numCan = canchas[miGrp];
+    }
+}
+
+Monitor canchas[ID:1..8]{
+    cond esperando;
+    
+    Procedure llegue(){
+        cant++;
+        if(cant == 10){
+            signal(estamosTodos);
+            llegamos = true;
+        } else {
+            wait(esperando);
+        }
+    }
+
+    Procedure esperando(){
+        if (!llegamos){
+            wait(estamosTodos);
+        }
+    }
+
+    Procedure fin(){
+        signal_all(esperando);
+    }
+
+}
+
+-------------------------------------------------------------------------------------------------------------------
+
+. Resolver con SEMÁFOROS el siguiente problema. En un restorán trabajan C cocineros y M mozos. De
+forma repetida, los cocineros preparan un plato y lo dejan listo en la bandeja de platos terminados, mientras
+que los mozos toman los platos de esta bandeja para repartirlos entre los comensales. Tanto los cocineros
+como los mozos trabajan de a un plato por vez. Modele el funcionamiento del restorán considerando que la
+bandeja de platos listos puede almacenar hasta P platos. No es necesario modelar a los comensales ni que
+los procesos terminen. 
+
+sem mutex = 1;
+sem platos = 0;
+sem espacio = P;
+
+Process cocinero[ID:1..C]{
+    while(true){
+        P(espacio);
+        P(mutex);
+        fila.push(plato);
+        V(mutex);
+        V(platos);
+    }
+    
+}
+
+Process mozo[ID:1..M]{
+    while(true){
+        P(platos);
+        P(mutex);
+        fila.pop(plato);
+        V(mutex);
+        V(espacio);
+    }
+}
+
+
+2. Resolver con MONITORES el siguiente problema. En una planta verificadora de vehículos existen 5
+estaciones de verificación. Hay 75 vehículos que van para ser verificados, cada uno conoce el número de
+estación a la cual debe ir. Cada vehículo se dirige a la estación correspondiente y espera a que lo atiendan.
+Una vez que le entregan el comprobante de verificación, el vehículo se retira. Considere que en cada estación
+se atienden a los vehículos de acuerdo con el orden de llegada. Nota: maximizar la concurrencia. 
+
+//Puede que esté mal
+
+Process auto[ID:1..75]{
+    planta[miPlanta].llegue();
+}
+
+Process plantas[ID:1..5]{
+    planta[ID].siguiente();
+    Verificacion();
+    planta[ID].fin();
+}
+
+Monitor planta[ID:1..5]{
+
+    Procedure llegue(){
+        if(libre){
+            cant++;
+            libre = false;
+        } else {
+            cant++;
+            wait(miTurno);
+        }
+        signal(sig);
+        wait(comprobante);
+    }
+
+    Procedure siguiente(){
+        if(cant == 0){
+            wait(sig);
+        }
+        cant--;
+    }
+
+    Procedure fin(){
+        signal(comprobante);
+        if(cant == 0){
+            libre = true;
+        }
+        signal(miTurno);
+    }
+}
+
+
+3. Existen N personas que desean utilizar un cajero automático. Se debe tener en cuenta el orden de llegada de las personas.
+Suponga que hay una función UsarCajero() que simula el uso del cajero. Si llega una persona anciana tiene prioridad
+
+Process personas[ID:1..N]{
+    cajero.llegue();
+    usarCajero();
+    cajero.fin();
+}
+
+Monitor cajero{
+
+    Procedure llegue(){
+        If(libre){
+            libre = false
+        } else {
+            fila.push(ID, edad);
+            wait(espera[ID]);
+        }
+    }
+
+    Procedure fin(){
+        if(empty(fila)){
+            libre = true;
+        } else {
+            fila.pop(idP);
+            signal(espera[idP]);
+        }
+    }
+}
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+En una playa hay 5 personas que deben juntar 15 monedas cada una y obtener el
+TOTAL de dinero juntado entre todos (la suma del valor de las 75 monedas que
+pueden ser de 1, 2 o 5 pesos). Al terminar todos los procesos deben guardarse en
+una variable local el TOTAL. Nota: maximizar la concurrencia. Suponga que existe
+una función Moneda() llamada por las personas que simula encontrar UNA moneda
+y retorna el valor de la misma. Cada persona trabaja sobre una zona diferente de la
+playa.
+
+
+int total;
+
+Process persona[ID:1..5]{
+    int juntado, totaljuntado;
+
+    for i=1 to 15{
+        juntado += Moneda();
+    }
+
+    <total += juntado>;
+    <terminados++>;
+    <await terminados==5>;
+    totaljuntado = total;
+}
+
+Se debe calcular el valor promedio de un vector de 1000 números por medio de 10
+procesos. Al finalizar todos los procesos deben guardar en una variable local el
+resultado final. Nota: maximizar la concurrencia
+
+int sumatotal;
+int terminados;
+
+Process proceso[ID:0..9]{
+    int suma, totalJuntado;
+    for (i=1 to 100){
+        suma += vector[id*100 + i];
+    }
+
+    <sumaTotal += suma>;
+    <terminados++>;
+    <await terminados == 5>;
+    totaljuntado = sumaTotal;
+}
+
+
+--------------------------------------------------------------------------------------------------------------
+
+7. Se debe simular una maratón con C corredores donde en la llegada hay UNA máquina expendedora de agua con capacidad para 20 
+botellas. Además existe un repositor encargado de reponer las botellas de la máquina. Cuando los C corredores han llegado al 
+inicio comienza la carrera. Cuando un corredor termina la carrera se dirigen a la máquina expendedora, espera su turno 
+(respetando el orden de llegada), saca una botella y se retira. Si encuentra la máquina sin botellas, le avisa al repositor 
+para que cargue nuevamente la máquina con 20 botellas; espera a que se haga la recarga; saca una botella y se retira. 
+Nota: maximizar la concurrencia; mientras se reponen las botellas se debe permitir que otros corredores se encolen.
+
+
+Process corredor[ID:1..C]{
+    admin.llegue();
+    --Corre
+    admin.llegada();
+    maquina.sacarBotella();
+}
+
+Monitor admin{
+
+    Procedure llegue(){
+        cant++;
+        if(cant == C){
+            signal_all(barrera);
+        } else {
+            wait(barrera);
+        }
+    }
+
+    Procedure llegada(){
+        if(libre){
+            libre = false;
+        } else {
+            cant++;
+            wait(enFila);
+        }
+    }
+}
+
+Monitor maquina(){
+    
+    Procedure sacarBotella(){
+        if(cantBotellas == 0){
+            signal(reponer);
+            wait(esperoBotellas);
+        }
+        cantBotellas--;
+    }
+
+    Procedure repositor(){
+        if(cantBotellas>0){
+            wait(reponer);
+        }
+        cantBotellas = 20;
+        signal(esperoBotellas);
+    }
+}
+
+
+7. En una empresa de genética hay N clientes que envian secuencias de ADN para que sean analizadas y esperan los resultados
+para poder continuar. Para resolver estos análisis la empresa cuenta con DOS servidores que resuelven los pedidos de acuerdo
+al orden de llegada de los mismos. 
+
+Process cliente[ID:1..N]{
+    admin.llegue(ID);
+}
+
+Process servidor[ID:1..2]{
+    admin.servidores(idP);
+    resul = resultados();
+    admin.termine(idP);
+}
+
+monitor admin{
+
+    Procedure llegue(id: IN INT){
+        fila.push(ID);
+        signal(estoy);
+        wait(sig[ID]);
+    }
+
+    Procedure servidores(idP: OUT INT){
+        while(empty(fila)){
+            wait(estoy);
+        }
+        fila.pop(idP);
+    }
+
+    Procedure termine(idP: IN INT; resul: OUT Text){
+        resultados[idP] = resul;
+        signal(sig[idP]);
+    }
+}
+
+-------------------------------------------------------------------------------------------------------------
+
